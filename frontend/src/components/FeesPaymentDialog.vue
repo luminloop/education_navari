@@ -88,10 +88,10 @@ const props = defineProps({
 const emits = defineEmits(['update:modelValue', 'success'])
 
 onMounted(() => {
-  const script = document.createElement('script')
-  script.src = `https://checkout.razorpay.com/v1/checkout.js`
-  document.body.appendChild(script)
-})
+   const script = document.createElement('script')
+   script.src = `https://js.paystack.co/v1/inline.js`
+   document.body.appendChild(script)
+ })
 
 const paymentOptions = createResource({
   url: 'education.education.billing.get_payment_options',
@@ -114,29 +114,42 @@ const paymentFailureResource = createResource({
 })
 
 function openPaymentGateway(close) {
-  if (!billingDetails.mobile_number || !billingDetails.email) {
-    validateFields()
-    return
-  }
-  paymentOptions.submit(
-    {},
-    {
-      onSuccess(data) {
-        data.handler = (response) => {
-          handleSuccess(response, close)
-        }
-
-        let rzp = new Razorpay(data)
-        rzp.open()
-        rzp.on('payment.failed', (response) => handleFailure(response))
-        rzp.on('payment.success', (response) => handleSuccess(response, close))
-      },
-      onError(err) {
-        showError(err)
-      },
-    }
-  )
-}
+   if (!billingDetails.mobile_number || !billingDetails.email) {
+     validateFields()
+     return
+   }
+   paymentOptions.submit(
+     {},
+     {
+       onSuccess(data) {
+         // Initialize Paystack payment
+         const handler = PaystackPop.setup({
+           key: data.key_id, // This should be the Paystack public key from our backend
+           email: data.prefill.email,
+           amount: data.amount * 100, // Paystack expects amount in kobo/cents
+           currency: data.currency || 'GHS', // Default to GHS, can be overridden
+           ref: data.order_id || Math.floor(Math.random() * 1000000000 + 1), // Reference
+           metadata: {
+             // Include any additional data needed for verification
+             invoice: props.row.invoice,
+             student_id: props.student.name
+           },
+           callback: function(response) {
+             // Handle successful payment
+             handleSuccess(response, close)
+           },
+           onClose: function() {
+             // Handle closed popup
+           }
+         });
+         handler.openIframe();
+       },
+       onError(err) {
+         showError(err)
+       },
+     }
+   )
+ }
 
 function validateFields() {
   if (!billingDetails.mobile_number) {
@@ -161,38 +174,40 @@ function validateFields() {
 }
 
 function handleSuccess(response, close) {
-  paymentSuccessResource.submit(
-    {
-      response: response,
-      against_invoice: props.row.invoice,
-      billing_details: billingDetails,
-    },
-    {
-      onSuccess(data) {
-        close()
-        emits('success')
-      },
-      onError(err) {
-        showError(err)
-      },
-    }
-  )
-}
+   // Paystack returns transaction data directly in the callback
+   paymentSuccessResource.submit(
+     {
+       response: response,
+       against_invoice: props.row.invoice,
+       billing_details: billingDetails,
+     },
+     {
+       onSuccess(data) {
+         close()
+         emits('success')
+       },
+       onError(err) {
+         showError(err)
+       },
+     }
+   )
+ }
 
 function handleFailure(response) {
-  paymentFailureResource.submit(
-    {
-      response: response,
-      against_invoice: props.row.invoice,
-      billing_details: billingDetails,
-    },
-    {
-      onError(err) {
-        showError(err)
-      },
-    }
-  )
-}
+   // Paystack failure response might have different structure
+   paymentFailureResource.submit(
+     {
+       response: response,
+       against_invoice: props.row.invoice,
+       billing_details: billingDetails,
+     },
+     {
+       onError(err) {
+         showError(err)
+       },
+     }
+   )
+ }
 
 function showError(err) {
   console.log(err)

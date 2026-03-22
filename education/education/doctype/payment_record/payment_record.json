@@ -38,12 +38,12 @@
    "options": "Student",
    "read_only": 1
   },
-  {
-   "fieldname": "order_id",
-   "fieldtype": "Data",
-   "label": "Order ID",
-   "read_only": 1
-  },
+{
+	"fieldname": "order_id",
+	"fieldtype": "Data",
+	"label": "Transaction Reference",
+	"read_only": 1
+},
   {
    "fieldname": "payment_id",
    "fieldtype": "Data",
@@ -84,11 +84,11 @@
    "label": "Email",
    "read_only": 1
   },
-  {
-   "fieldname": "razorpay_data_section",
-   "fieldtype": "Section Break",
-   "label": "Razorpay Data"
-  },
+{
+	"fieldname": "paystack_data_section",
+	"fieldtype": "Section Break",
+	"label": "Paystack Data"
+},
   {
    "fieldname": "address_tab",
    "fieldtype": "Tab Break",
@@ -194,10 +194,14 @@
  ],
  "sort_field": "modified",
  "sort_order": "DESC",
- "states": [
-  {
-   "color": "Green",
-   "title": "Captured"
-  }
+"states": [
+   {
+    "color": "Green",
+    "title": "Success"
+   },
+   {
+    "color": "Red",
+    "title": "Failed"
+   }
  ]
 }

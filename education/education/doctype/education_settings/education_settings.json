@@ -116,16 +116,16 @@
    "fieldtype": "Check",
    "label": "Attendance Based on Course Schedule"
   },
-  {
-   "fieldname": "razorpay_key",
-   "fieldtype": "Data",
-   "label": "Razorpay Key"
-  },
-  {
-   "fieldname": "razorpay_secret",
-   "fieldtype": "Password",
-   "label": "Razorpay Secret"
-  },
+{
+	"fieldname": "paystack_key",
+	"fieldtype": "Data",
+	"label": "Paystack Key"
+},
+{
+	"fieldname": "paystack_secret",
+	"fieldtype": "Password",
+	"label": "Paystack Secret"
+},
   {
    "fieldname": "column_break_atxc",
    "fieldtype": "Column Break"
