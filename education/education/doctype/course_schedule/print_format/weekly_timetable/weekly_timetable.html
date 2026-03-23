@@ -1,0 +1,119 @@
+{% from "frappe/utils/print_format.html" import utils %}
+
+<div class="print-format">
+	<h1 class="text-center">{{ _("Weekly Timetable") }}</h1>
+	<p class="text-center">
+		<strong>{{ _("Academic Term") }}:</strong> {{ doc.academic_term or "" }}<br>
+		<strong>{{ _("School") }}:</strong> {{ doc.company or "" }}<br>
+		<strong>{{ _("Generated On") }}:</strong> {{ nowdate() }}
+	</p>
+	
+	<div class="table-responsive">
+		<table class="table table-bordered timetable-table">
+			<thead>
+				<tr>
+					<th class="text-center">{{ _("Time/Day") }}</th>
+					{% for day in ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"] %}
+					<th class="text-center">{{ _(day) }}</th>
+					{% endfor %}
+				</tr>
+			</thead>
+			<tbody>
+				{% set time_slots = [
+					("08:00", "08:45"),
+					("08:45", "09:30"), 
+					("09:30", "10:15"),
+					("10:15", "10:30"),  {# Break #}
+					("10:30", "11:15"),
+					("11:15", "12:00"),
+					("12:00", "13:00"),  {# Lunch #}
+					("13:00", "13:45"),
+					("13:45", "14:30"),
+					("14:30", "15:15"),
+					("15:15", "16:00")
+				] %}
+				
+				{% for start_time, end_time in time_slots %}
+				<tr>
+					<td class="text-center fw-bold" style="background-color: #f8f9fa;">{{ start_time }} - {{ end_time }}</td>
+					{% for day in ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"] %}
+					<td class="text-center" style="min-height: 40px; vertical-align: top;">
+						{% set day_str = day.lower() %}
+						{% set schedule_items = [] %}
+						
+						{% for item in doc.items if item.schedule_date|date == (doc.academic_term and doc.academic_term.term_start_date or today) and 
+							item.schedule_date|date == (doc.academic_term and doc.academic_term.term_start_date or today)|date_add:(loop.index0|int) and 
+							item.from_time|time >= start_time and item.to_time|time <= end_time %}
+							{% set _ = schedule_items.append(item) %}
+						{% endfor %}
+						
+						{% if schedule_items|length > 0 %}
+							{% for item in schedule_items %}
+							<div class="timetable-slot" style="
+								border: 1px solid #dee2e6; 
+								border-radius: 3px; 
+								margin: 2px; 
+								padding: 3px; 
+								font-size: 0.8em;
+								background-color: {{ item.color or '#e3f2fd' }};
+							">
+								<strong>{{ item.course or item.course_name }}</strong><br>
+								<small>{{ item.instructor or item.instructor_name }}</small><br>
+								<small class="text-muted">{{ item.student_group }}</small>
+							</div>
+							{% endfor %}
+						{% else %}
+							<div class="text-muted fsmall">-</div>
+						{% endif %}
+					</td>
+					{% endfor %}
+				</tr>
+				{% endfor %}
+			</tbody>
+		</table>
+	</div>
+	
+	{% if doc.items|length > 0 %}
+	<div class="mt-4">
+		<h5>{{ _("Legend") }}</h5>
+		<div class="row">
+			{% for item in doc.items|unique('course') %}
+			<div class="col-md-3 mb-2">
+				<div class="d-flex align-items-center">
+					<div style="width: 12px; height: 12px; background-color: {{ item.color or '#e3f2fd' }}; margin-right: 8px; border: 1px solid #ccc;"></div>
+					<span>{{ item.course }}</span>
+				</div>
+			</div>
+			{% endfor %}
+		</div>
+	</div>
+	{% endif %}
+</div>
+
+<style>
+	.timetable-table {
+		width: 100%;
+		border-collapse: collapse;
+		margin: 20px 0;
+	}
+	.timetable-table th,
+	.timetable-table td {
+		border: 1px solid #dee2e6;
+		padding: 8px;
+		text-align: center;
+		vertical-align: middle;
+	}
+	.timetable-table th {
+		background-color: #f8f9fa;
+		font-weight: bold;
+	}
+	.timetable-table td {
+		min-height: 50px;
+	}
+	.timetable-slot {
+		margin: 1px;
+		padding: 2px;
+		border-radius: 2px;
+		font-size: 0.75em;
+	}
+</style>

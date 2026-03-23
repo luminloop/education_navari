@@ -1,0 +1,16 @@
+{
+	"disabled": 0,
+	"doc_type": "Course Schedule",
+	"font_size": "10pt",
+	"idx": 0,
+	"line_height": "normal",
+	"margin_bottom": "10mm",
+	"margin_left": "10mm",
+	"margin_right": "10mm",
+	"margin_top": "10mm",
+	"name": "Weekly Timetable",
+	"orientation": "Landscape",
+	"page_break": "0",
+	"print_style": "Default",
+	"section": "Course Schedule"
+}
