@@ -79,13 +79,26 @@ def get_payment_options(doctype, docname, phone, currency=None):
         frappe.throw(_("Invalid document provided."))
     validate_phone_number(phone_number=phone, throw=True)
     details = get_details(docname)
+    # Get payer email: try customer, then user
+    customer = frappe.db.get_value("Sales Invoice", docname, "customer")
+    payer_email = None
+    if customer:
+        payer_email = frappe.db.get_value("Customer", customer, "email_id")
+    
+    if not payer_email:
+        # Fall back to the logged-in user's email
+        payer_email = frappe.db.get_value("User", frappe.session.user, "email")
+    
+    if not payer_email:
+        frappe.throw(_("Unable to determine payer's email. Please set an email for the Customer or the User."))
+    
     settings = get_paystack_settings()
 
     # Initialize Paystack transaction
     paystack_response = create_paystack_transaction(
         amount=details.outstanding_amount,
         currency=details.currency,
-        email=frappe.session.user,
+        email=payer_email,
         metadata={"purpose": "fee_payment", "invoice": docname, "phone": phone},
     )
 
