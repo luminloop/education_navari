@@ -101,7 +101,7 @@ def get_payment_options(doctype, docname, phone, currency=None):
             "amount": int(
                 float(details.outstanding_amount) * 100
             ),  # Amount in kobo/cents
-            "currency": data["currency"],
+            "currency": details.currency or "GHS",
             "access_code": data["access_code"],  # For Paystack verification
             "prefill": {
                 "name": frappe.db.get_value("User", frappe.session.user, "full_name"),
