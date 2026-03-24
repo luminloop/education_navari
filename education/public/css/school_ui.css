@@ -1,0 +1,330 @@
+/* School UI Polish CSS - Kenyan Junior School Specific Enhancements */
+/* Focuses on making existing Frappe Education forms and lists more school-friendly */
+
+/* Main Navbar Styling */
+.navbar {
+  background-color: #2E86C1 !important;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1) !important;
+}
+.navbar .navbar-brand {
+  font-weight: 500 !important;
+  font-size: 16px !important;
+  color: #fff !important;
+}
+.navbar .navbar-brand::after {
+  content: attr(data-school-name) " Junior School";
+  font-weight: 500;
+  margin-left: 8px;
+  font-size: 16px;
+}
+
+/* Sidebar Styling */
+.sidebar-nav {
+  background-color: #fff !important;
+  border-right: 1px solid #AED6F1 !important;
+}
+.sidebar-nav-item {
+  color: #2c3e50 !important;
+  border-left: none !important;
+  padding: 12px 16px !important;
+}
+.sidebar-nav-item:hover,
+.sidebar-nav-item.active {
+  background-color: #EBF5FB !important;
+  color: #2E86C1 !important;
+  border-left: 3px solid #2E86C1 !important;
+}
+.sidebar-nav-item.active {
+  font-weight: 500;
+}
+
+/* Card Elements */
+.frappe-card {
+  border: 1px solid #AED6F1 !important;
+  border-radius: 10px !important;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.05) !important;
+}
+.frappe-card .card-header {
+  background-color: #EBF5FB !important;
+  border-bottom: 1px solid #AED6F1 !important;
+  border-radius: 10px 10px 0 0 !important;
+}
+
+/* Form Sections */
+.form-section {
+  background-color: #fff !important;
+  border-bottom: 1px solid #AED6F1 !important;
+  margin-bottom: 20px !important;
+  padding-bottom: 20px !important;
+}
+.form-section .section-head {
+  background-color: #EBF5FB !important;
+  border-left: 3px solid #2E86C1 !important;
+  color: #2E86C1 !important;
+  font-weight: 500 !important;
+  padding: 12px 16px !important;
+  margin: -12px -16px 20px -16px !important;
+  border-radius: 0;
+}
+
+/* Page Header Styles */
+.page-head {
+  border-bottom: 1px solid #AED6F1 !important;
+  margin-bottom: 20px !important;
+  padding-bottom: 10px !important;
+}
+.page-head .page-title {
+  color: #2E86C1 !important;
+  font-size: 22px !important;
+  font-weight: 500 !important;
+  margin-bottom: 5px !important;
+}
+.page-head .breadcrumb {
+  color: #6c757d !important;
+  font-size: 14px !important;
+}
+.page-head .breadcrumb-item+.breadcrumb-item::before {
+  color: #6c757d !important;
+}
+
+/* List View Toolbar */
+.list-view-control {
+  background-color: #EBF5FB !important;
+  border-bottom: 1px solid #AED6F1 !important;
+  padding: 12px 16px !important;
+}
+.list-view-control .btn-default {
+  border-color: #AED6F1 !important;
+  color: #2E86C1 !important;
+}
+.list-view-control .btn-default:hover {
+  background-color: #EBF5FB !important;
+  border-color: #AED6F1 !important;
+  color: #2E86C1 !important;
+}
+
+/* Indicator Pills (Status Badges) */
+.indicator {
+  border-radius: 20px !important;
+  padding: 4px 12px !important;
+  font-size: 13px !important;
+  font-weight: 500 !important;
+}
+.indicator.blue {
+  background-color: #D6EAF8 !important;
+  color: #2E86C1 !important;
+}
+.indicator.green {
+  background-color: #D5F5E3 !important;
+  color: #1E8449 !important;
+}
+.indicator.orange {
+  background-color: #FEF9E7 !important;
+  color: #D4AC0D !important;
+}
+.indicator.red {
+  background-color: #FADBD8 !important;
+  color: #C0392B !important;
+}
+
+/* Student Form Header Avatar */
+.form-image-wrapper {
+  width: 80px !important;
+  height: 80px !important;
+  margin: 0 auto 20px auto !important;
+}
+.form-image-wrapper .img-container {
+  width: 80px !important;
+  height: 80px !important;
+  border-radius: 50% !important;
+  overflow: hidden !important;
+  border: 3px solid #2E86C1 !important;
+  background-color: #EBF5FB !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  font-size: 36px !important;
+  font-weight: 600 !important;
+  color: #2E86C1 !important;
+  text-transform: uppercase !important;
+}
+.form-image-wrapper .img-container::before {
+  content: attr(data-initials);
+  letter-spacing: -1px;
+}
+
+/* Hide image if we're showing initials */
+.form-image-wrapper .img-container img {
+  display: none !important;
+}
+
+/* Show initials when no image */
+.form-image-wrapper:not([data-image]) .img-container::before {
+  display: block !important;
+}
+
+/* Print-Friendly Styles */
+@media print {
+  .navbar,
+  .sidebar-nav,
+  .list-view-control,
+  .page-head .breadcrumb,
+  .form-actions,
+  .sidebar-toggle,
+  .messages-container,
+  .modal-backdrop {
+    display: none !important;
+  }
+  
+  .layout-main-section,
+  .frappe-card,
+  .form-section {
+    background-color: #fff !important;
+    border: none !important;
+    box-shadow: none !important;
+    margin: 0 !important;
+  }
+  
+  .page-head .page-title {
+    color: #000 !important;
+  }
+  
+  .section-head {
+    background-color: #f0f0f0 !important;
+    border-left: 3px solid #2E86C1 !important;
+  }
+  
+  body {
+    font-size: 12px !important;
+    line-height: 1.4 !important;
+  }
+  
+  /* Hide page breaks inside elements to avoid breaking forms mid-field */
+  .form-section, .frappe-control {
+    page-break-inside: avoid !important;
+  }
+}
+
+/* Welcome Banner */
+.welcome-banner {
+  background-color: #EBF5FB !important;
+  border: 1px solid #AED6F1 !important;
+  border-radius: 8px !important;
+  padding: 16px !important;
+  margin-bottom: 20px !important;
+  color: #2E86C1 !important;
+  font-weight: 500 !important;
+  font-size: 16px !important;
+  display: flex !important;
+  align-items: center !important;
+}
+.welcome-banner::before {
+  content: "👋";
+  margin-right: 8px;
+  font-size: 20px;
+}
+
+/* Responsive Adjustments */
+@media (max-width: 768px) {
+  .navbar .navbar-brand {
+    font-size: 14px !important;
+  }
+  .navbar .navbar-brand::after {
+    display: none !important;
+  }
+  .sidebar-nav-item {
+    padding: 10px 12px !important;
+    font-size: 14px !important;
+  }
+  .form-image-wrapper {
+    width: 60px !important;
+    height: 60px !important;
+  }
+  .form-image-wrapper .img-container {
+    width: 60px !important;
+    height: 60px !important;
+    font-size: 28px !important;
+  }
+  .welcome-banner {
+    font-size: 14px !important;
+    padding: 12px !important;
+  }
+}
+
+/* Dark Mode Adjustments */
+@media (prefers-color-scheme: dark) {
+  .navbar {
+    background-color: #1e5f99 !important;
+  }
+  .sidebar-nav {
+    background-color: #2c3e50 !important;
+    border-right: 1px solid #3498db !important;
+  }
+  .sidebar-nav-item {
+    color: #ecf0f1 !important;
+  }
+  .sidebar-nav-item:hover,
+  .sidebar-nav-item.active {
+    background-color: #34495e !important;
+    color: #ecf0f1 !important;
+    border-left: 3px solid #3498db !important;
+  }
+  .frappe-card {
+    background-color: #2c3e50 !important;
+    border-color: #3498db !important;
+  }
+  .frappe-card .card-header {
+    background-color: #34495e !important;
+    border-bottom: 1px solid #3498db !important;
+  }
+  .form-section {
+    background-color: #2c3e50 !important;
+    border-bottom: 1px solid #3498db !important;
+  }
+  .form-section .section-head {
+    background-color: #34495e !important;
+    border-left: 3px solid #3498db !important;
+    color: #ecf0f1 !important;
+  }
+  .page-head {
+    border-bottom: 1px solid #3498db !important;
+  }
+  .page-head .page-title {
+    color: #ecf0f1 !important;
+  }
+  .page-head .breadcrumb {
+    color: #bdc3c7 !important;
+  }
+  .page-head .breadcrumb-item+.breadcrumb-item::before {
+    color: #bdc3c7 !important;
+  }
+  .list-view-control {
+    background-color: #34495e !important;
+    border-bottom: 1px solid #3498db !important;
+  }
+  .indicator {
+    color: #ecf0f1 !important;
+  }
+  .indicator.blue {
+    background-color: #3498db !important;
+  }
+  .indicator.green {
+    background-color: #1e8449 !important;
+  }
+  .indicator.orange {
+    background-color: #d4ac0d !important;
+  }
+  .indicator.red {
+    background-color: #c0392b !important;
+  }
+  .form-image-wrapper .img-container {
+    background-color: #34495e !important;
+    border-color: #3498db !important;
+    color: #ecf0f1 !important;
+  }
+  .welcome-banner {
+    background-color: #34495e !important;
+    border-color: #3498db !important;
+    color: #ecf0f1 !important;
+  }
+}

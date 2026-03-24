@@ -1,0 +1,212 @@
+/* School Theme CSS - Kenyan Junior School Customization */
+/* Light Blue Theme: #2E86C1 (primary), #EBF5FB (light bg), #AED6F1 (border) */
+
+/* Navbar Overrides */
+.navbar {
+  background-color: #2E86C1 !important;
+}
+.navbar .dropdown-menu {
+  background-color: #fff;
+}
+.navbar .dropdown-item {
+  color: #212529;
+}
+.navbar .dropdown-item:hover {
+  background-color: #EBF5FB;
+}
+.navbar .navbar-brand,
+.navbar .navbar-nav .nav-link,
+.navbar .navbar-text,
+.navbar .icon {
+  color: #fff !important;
+}
+.navbar .navbar-brand:hover,
+.navbar .navbar-nav .nav-link:hover,
+.navbar .navbar-text:hover,
+.navbar .icon:hover {
+  opacity: 0.9;
+}
+
+/* Sidebar Active Item */
+.sidebar-nav .sidebar-nav-item.active,
+.sidebar-nav .sidebar-nav-item.active:hover {
+  background-color: #EBF5FB !important;
+  border-left: 3px solid #2E86C1 !important;
+}
+
+/* Main Section Background */
+.layout-main-section {
+  background-color: #EBF5FB !important;
+}
+
+/* Primary Buttons */
+.btn-primary {
+  background-color: #2E86C1 !important;
+  border-color: #2E86C1 !important;
+  color: #fff !important;
+  min-height: 44px !important;
+  border-radius: 8px !important;
+  box-shadow: none !important;
+  font-weight: 500;
+}
+.btn-primary:hover,
+.btn-primary:focus,
+.btn-primary:active,
+.btn-primary.active,
+.open > .dropdown-toggle.btn-primary {
+  background-color: #1e5f99 !important;
+  border-color: #1e5f99 !important;
+  color: #fff !important;
+}
+
+/* Form Section Headers */
+.section-head {
+  background-color: #EBF5FB !important;
+  border-left: 3px solid #2E86C1 !important;
+  padding-left: 10px !important;
+}
+
+/* List View Rows */
+.list-row {
+  min-height: 52px !important;
+}
+.list-row:hover {
+  background-color: #EBF5FB !important;
+}
+
+/* School Stat Cards */
+.school-stat-card {
+  background-color: #fff !important;
+  border: 1px solid #AED6F1 !important;
+  border-radius: 12px !important;
+  padding: 16px !important;
+  margin-bottom: 16px;
+}
+.school-stat-card .label {
+  font-size: 12px !important;
+  color: #6c757d !important;
+  margin-bottom: 8px !important;
+  display: block;
+}
+.school-stat-card .value {
+  font-size: 28px !important;
+  font-weight: 500 !important;
+  color: #2E86C1 !important;
+  display: block;
+}
+.school-stat-card .value.stat-warn {
+  color: #D4AC0D !important;
+}
+.school-stat-card .value.stat-danger {
+  color: #C0392B !important;
+}
+
+/* School Badges */
+.school-badge {
+  display: inline-block;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 500;
+}
+.school-badge.badge-paid {
+  background-color: #D5F5E3 !important;
+  color: #1E8449 !important;
+}
+.school-badge.badge-partial {
+  background-color: #FEF9E7 !important;
+  color: #D4AC0D !important;
+}
+.school-badge.badge-unpaid {
+  background-color: #FADBD8 !important;
+  color: #C0392B !important;
+}
+
+/* School Quick Actions Grid */
+.school-quick-actions {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  margin: 16px 0;
+}
+.school-quick-actions .btn {
+  background-color: #fff !important;
+  border: 1px solid #AED6F1 !important;
+  color: #2E86C1 !important;
+  min-height: 44px !important;
+  border-radius: 8px !important;
+  box-shadow: none !important;
+}
+.school-quick-actions .btn:hover {
+  background-color: #EBF5FB !important;
+  border-color: #AED6F1 !important;
+  color: #2E86C1 !important;
+}
+
+/* Hide Specific Sidebar Items (by original label) */
+[data-label="Program"],
+[data-label="Instructor"],
+[data-label="Course Scheduling Tool"],
+[data-label="Assessment Plan Status"],
+[data-label="Assessment Plan"],
+[data-label="Student Log"],
+[data-label="LMS Course"] {
+  display: none !important;
+}
+
+/* Base Font Size Increase */
+body {
+  font-size: 15px !important;
+}
+
+/* Dark Mode Adjustments */
+@media (prefers-color-scheme: dark) {
+  .navbar {
+    background-color: #1e5f99 !important;
+  }
+  .layout-main-section {
+    background-color: #1a1a1a !important;
+  }
+  .sidebar-nav .sidebar-nav-item.active,
+  .sidebar-nav .sidebar-nav-item.active:hover {
+    background-color: #2c3e50 !important;
+    border-left: 3px solid #3498db !important;
+  }
+  .btn-primary {
+    background-color: #3498db !important;
+    border-color: #3498db !important;
+  }
+  .btn-primary:hover,
+  .btn-primary:focus,
+  .btn-primary:active,
+  .btn-primary.active,
+  .open > .dropdown-toggle.btn-primary {
+    background-color: #1e5f99 !important;
+    border-color: #1e5f99 !important;
+  }
+  .section-head {
+    background-color: #2c3e50 !important;
+    border-left: 3px solid #3498db !important;
+  }
+  .list-row:hover {
+    background-color: #2c3e50 !important;
+  }
+  .school-stat-card {
+    background-color: #2c3e50 !important;
+    border-color: #3498db !important;
+  }
+  .school-stat-card .label {
+    color: #bdc3c7 !important;
+  }
+  .school-stat-card .value {
+    color: #ecf0f1 !important;
+  }
+  .school-quick-actions .btn {
+    background-color: #2c3e50 !important;
+    border-color: #3498db !important;
+    color: #ecf0f1 !important;
+  }
+  .school-quick-actions .btn:hover {
+    background-color: #34495e !important;
+  }
+}
