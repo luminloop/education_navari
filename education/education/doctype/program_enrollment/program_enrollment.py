@@ -127,16 +127,15 @@ def get_program_courses(doctype, txt, searchfield, start, page_len, filters):
 		frappe.msgprint(_("Please select a Program first."))
 		return []
 
-	doctype = "Program Course"
 	return frappe.db.sql(
 		"""select course, course_name from `tabProgram Course`
-        where  parent = %(program)s and course like %(txt)s {match_cond}
+        where  parent = %(program)s and course like %(txt)s
         order by
             if(locate(%(_txt)s, course), locate(%(_txt)s, course), 99999),
             idx desc,
             `tabProgram Course`.course asc
         limit {start}, {page_len}""".format(
-			match_cond=get_match_cond(doctype), start=start, page_len=page_len
+			start=start, page_len=page_len
 		),
 		{
 			"txt": "%{0}%".format(txt),
