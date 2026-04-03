@@ -1,13 +1,16 @@
 [
 	{
+		"doctype": "Course",
 		"course_name": "TC100",
 		"course_abbreviation": "TC"
 	},
 	{
+		"doctype": "Course",
 		"course_name": "TC101",
 		"course_abbreviation": "TC1"
 	},
 	{
+		"doctype": "Course",
 		"course_name": "TC102",
 		"course_abbreviation": "TC2"
 	}

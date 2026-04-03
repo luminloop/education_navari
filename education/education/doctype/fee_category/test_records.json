@@ -1,11 +1,14 @@
 [
 	{
+		"doctype": "Fee Category",
 		"category_name": "Admission Fee"
 	},
 	{
+		"doctype": "Fee Category",
 		"category_name": "Tuition Fee"
 	},
 	{
+		"doctype": "Fee Category",
 		"category_name": "Transportation Fee"
 	}
 ]

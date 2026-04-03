@@ -56,6 +56,8 @@ def preview_report_card(doc):
 
 
 def get_attendance_count(student, academic_year, academic_term=None):
+	from frappe.query_builder.functions import Count
+
 	attendance = frappe._dict()
 	attendance.total = 0
 
@@ -69,12 +71,17 @@ def get_attendance_count(student, academic_year, academic_term=None):
 		)
 
 	if from_date and to_date:
-		data = frappe.get_all(
-			"Student Attendance",
-			{"student": student, "docstatus": 1, "date": ["between", (from_date, to_date)]},
-			["status", "count(student) as count"],
-			group_by="status",
-		)
+		sa = frappe.qb.DocType("Student Attendance")
+		data = (
+			frappe.qb.from_(sa)
+			.select(sa.status, Count(sa.name).as_("count"))
+			.where(
+				(sa.student == student)
+				& (sa.docstatus == 1)
+				& (sa.date[from_date:to_date])
+			)
+			.groupby(sa.status)
+		).run(as_dict=True)
 
 		for row in data:
 			if row.status == "Present":

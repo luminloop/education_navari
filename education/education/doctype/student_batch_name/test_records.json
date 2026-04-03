@@ -1,8 +1,10 @@
 [
 	{
+		"doctype": "Student Batch Name",
 		"batch_name": "_Batch 1"
 	},
 	{
+		"doctype": "Student Batch Name",
 		"batch_name": "_Batch 2"
 	}
 ]

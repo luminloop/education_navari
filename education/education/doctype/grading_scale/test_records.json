@@ -1,19 +1,23 @@
 [
- {
-  "grading_scale_name": "_Test Grading Scale",
-  "intervals": [
+  {
+    "doctype": "Grading Scale",
+   "grading_scale_name": "_Test Grading Scale",
+   "intervals": [
       {
+         "doctype": "Grading Scale Interval",
          "grade_code": "A",
          "threshold": 75
       },
       {
+          "doctype": "Grading Scale Interval",
           "grade_code": "B",
           "threshold": 50
       },
       {
+          "doctype": "Grading Scale Interval",
           "grade_code": "C",
           "threshold": 0
       }
   ]
- }
+  }
 ]
