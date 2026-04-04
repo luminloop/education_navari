@@ -13,8 +13,8 @@
    "indent": 0,
    "keep_closed": 0,
    "label": "Home",
-   "link_to": "Student Overview",
-   "link_type": "Dashboard",
+   "link_to": "school-dashboard",
+   "link_type": "Page",
    "show_arrow": 0,
    "type": "Link"
   },
@@ -655,7 +655,7 @@
    "type": "Link"
   }
  ],
- "modified": "2026-04-03 12:46:51.292314",
+ "modified": "2026-04-03 15:26:29.263333",
  "modified_by": "habert231@gmail.com",
  "module": "Education",
  "name": "Education",
