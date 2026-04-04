@@ -295,17 +295,29 @@
    "type": "Link"
   },
   {
-   "child": 1,
-   "collapsible": 0,
-   "icon": "pencil-line",
-   "indent": 0,
-   "keep_closed": 0,
-   "label": "Enter Marks",
-   "link_to": "Assessment Result",
-   "link_type": "DocType",
-   "show_arrow": 0,
-   "type": "Link"
-  },
+    "child": 1,
+    "collapsible": 0,
+    "icon": "pencil-line",
+    "indent": 0,
+    "keep_closed": 0,
+    "label": "Enter Marks",
+    "link_to": "Assessment Result",
+    "link_type": "DocType",
+    "show_arrow": 0,
+    "type": "Link"
+   },
+   {
+    "child": 1,
+    "collapsible": 0,
+    "icon": "table",
+    "indent": 0,
+    "keep_closed": 0,
+    "label": "Bulk Enter Marks",
+    "link_to": "Assessment Result Tool",
+    "link_type": "DocType",
+    "show_arrow": 0,
+    "type": "Link"
+   },
   {
    "child": 1,
    "collapsible": 0,
