@@ -765,3 +765,147 @@ def get_student_attendance(student, student_group):
 		filters={"student": student, "student_group": student_group, "docstatus": 1},
 		fields=["date", "status", "name"],
 	)
+
+
+# Timetable API methods
+@frappe.whitelist()
+def get_teachers():
+	"""Returns list of instructors for timetable filters."""
+	instructors = frappe.get_all(
+		"Instructor",
+		filters={"status": "Active"},
+		fields=["name", "instructor_name"],
+		order_by="instructor_name",
+	)
+	return [{"value": i.name, "label": i.instructor_name or i.name} for i in instructors]
+
+
+@frappe.whitelist()
+def get_streams():
+	"""Returns list of student groups (streams) for timetable filters."""
+	student_groups = frappe.get_all(
+		"Student Group",
+		filters={"disabled": 0},
+		fields=["name", "student_group_name"],
+		order_by="student_group_name",
+	)
+	return [{"value": sg.name, "label": sg.student_group_name or sg.name} for sg in student_groups]
+
+
+@frappe.whitelist()
+def get_rooms():
+	"""Returns list of rooms for timetable."""
+	rooms = frappe.get_all(
+		"Room",
+		fields=["name", "room_name"],
+		order_by="room_name",
+	)
+	return [{"value": r.name, "label": r.room_name or r.name} for r in rooms]
+
+
+@frappe.whitelist()
+def get_courses():
+	"""Returns list of courses for timetable."""
+	courses = frappe.get_all(
+		"Course",
+		fields=["name", "course_name"],
+		order_by="course_name",
+	)
+	return [{"value": c.name, "label": c.course_name or c.name} for c in courses]
+
+
+@frappe.whitelist()
+def get_course_schedule(instructor=None, stream=None):
+	"""Returns course schedule data for calendar."""
+	filters = {}
+	if instructor:
+		filters["instructor"] = instructor
+	if stream:
+		filters["student_group"] = stream
+
+	schedules = frappe.get_all(
+		"Course Schedule",
+		filters=filters,
+		fields=[
+			"name",
+			"course",
+			"instructor",
+			"instructor_name",
+			"student_group",
+			"room",
+			"schedule_date",
+			"from_time",
+			"to_time",
+			"program",
+		],
+		order_by="schedule_date, from_time",
+	)
+	return schedules
+
+
+@frappe.whitelist()
+def get_course_schedule_details(schedule_name):
+	"""Returns details of a specific course schedule."""
+	return frappe.get_doc("Course Schedule", schedule_name).as_dict()
+
+
+@frappe.whitelist()
+def update_course_schedule(schedule_name, schedule_date, from_time, to_time):
+	"""Updates course schedule time after drag/resize."""
+	try:
+		doc = frappe.get_doc("Course Schedule", schedule_name)
+		doc.schedule_date = schedule_date
+		doc.from_time = from_time
+		doc.to_time = to_time
+		doc.save()
+		return "success"
+	except Exception as e:
+		frappe.log_error(f"Error updating course schedule: {str(e)}")
+		return "error"
+
+
+@frappe.whitelist()
+def update_course_schedule_details(
+	schedule_name, course, instructor, student_group, room, schedule_date, from_time, to_time
+):
+	"""Updates all details of a course schedule."""
+	try:
+		doc = frappe.get_doc("Course Schedule", schedule_name)
+		doc.course = course
+		doc.instructor = instructor
+		doc.student_group = student_group
+		doc.room = room
+		doc.schedule_date = schedule_date
+		doc.from_time = from_time
+		doc.to_time = to_time
+		doc.save()
+		return "success"
+	except Exception as e:
+		frappe.log_error(f"Error updating course schedule details: {str(e)}")
+		return "error"
+
+
+@frappe.whitelist()
+def create_course_schedule(
+	course, instructor, student_group, room, schedule_date, from_time, to_time
+):
+	"""Creates a new course schedule."""
+	try:
+		# Get program from student group
+		program = frappe.db.get_value("Student Group", student_group, "program")
+		
+		doc = frappe.new_doc("Course Schedule")
+		doc.course = course
+		doc.instructor = instructor
+		doc.student_group = student_group
+		doc.room = room
+		doc.schedule_date = schedule_date
+		doc.from_time = from_time
+		doc.to_time = to_time
+		if program:
+			doc.program = program
+		doc.insert()
+		return doc.name
+	except Exception as e:
+		frappe.log_error(f"Error creating course schedule: {str(e)}")
+		return "error"

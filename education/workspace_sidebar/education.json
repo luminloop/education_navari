@@ -222,18 +222,18 @@
    "show_arrow": 0,
    "type": "Section Break"
   },
-  {
-   "child": 1,
-   "collapsible": 0,
-   "icon": "",
-   "indent": 0,
-   "keep_closed": 0,
-   "label": "View Timetable",
-   "link_to": "school-timetable",
-   "link_type": "Page",
-   "show_arrow": 0,
-   "type": "Link"
-  },
+   {
+    "child": 1,
+    "collapsible": 0,
+    "icon": "timer-reset",
+    "indent": 0,
+    "keep_closed": 0,
+    "label": "View Timetable",
+    "link_to": "education-timetable",
+    "link_type": "Page",
+    "show_arrow": 0,
+    "type": "Link"
+   },
   {
    "child": 1,
    "collapsible": 0,
@@ -655,7 +655,7 @@
    "type": "Link"
   }
  ],
- "modified": "2026-04-03 15:26:29.263333",
+ "modified": "2026-04-04 09:54:51.499565",
  "modified_by": "habert231@gmail.com",
  "module": "Education",
  "name": "Education",

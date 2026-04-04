@@ -7,7 +7,8 @@ def get_data():
 			"module_name": "Education",
 			"color": "grey",
 			"icon": "octicon octicon-file-directory",
-			"type": "module",
+			"type": "link",
+			"link": "/desk/school-dashboard",
 			"label": _("Education"),
 		}
 	]
