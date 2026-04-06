@@ -26,7 +26,8 @@ def get_data(data, filters):
 	args["assessment_group"] = filters.get("assessment_group")
 
 	args.students = frappe.get_all(
-		"Student Group Student", {"parent": filters.get("student_group")}, pluck="student"
+		"Student Group Student", {"parent": filters.get("student_group")}, pluck="student",
+		ignore_permissions=True
 	)
 
 	values = get_formatted_result(args, get_course=True)

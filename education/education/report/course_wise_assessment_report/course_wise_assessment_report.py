@@ -63,6 +63,7 @@ def get_formatted_result(args, get_course=False):
 			"grade",
 		],
 		order_by="",
+		ignore_permissions=True,
 	)
 
 	for result in assessment_result:
@@ -75,6 +76,7 @@ def get_formatted_result(args, get_course=False):
 				"parent": result.name,
 			},
 			["assessment_criteria", "maximum_score", "grade", "score"],
+			ignore_permissions=True,
 		)
 		result.update({"details": details})
 

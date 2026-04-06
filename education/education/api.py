@@ -776,6 +776,7 @@ def get_teachers():
 		filters={"status": "Active"},
 		fields=["name", "instructor_name"],
 		order_by="instructor_name",
+		ignore_permissions=True,
 	)
 	return [{"value": i.name, "label": i.instructor_name or i.name} for i in instructors]
 
@@ -788,6 +789,7 @@ def get_streams():
 		filters={"disabled": 0},
 		fields=["name", "student_group_name"],
 		order_by="student_group_name",
+		ignore_permissions=True,
 	)
 	return [{"value": sg.name, "label": sg.student_group_name or sg.name} for sg in student_groups]
 
@@ -799,6 +801,7 @@ def get_rooms():
 		"Room",
 		fields=["name", "room_name"],
 		order_by="room_name",
+		ignore_permissions=True,
 	)
 	return [{"value": r.name, "label": r.room_name or r.name} for r in rooms]
 
@@ -810,6 +813,7 @@ def get_courses():
 		"Course",
 		fields=["name", "course_name"],
 		order_by="course_name",
+		ignore_permissions=True,
 	)
 	return [{"value": c.name, "label": c.course_name or c.name} for c in courses]
 
@@ -839,6 +843,7 @@ def get_course_schedule(instructor=None, stream=None):
 			"program",
 		],
 		order_by="schedule_date, from_time",
+		ignore_permissions=True,
 	)
 	return schedules
 
@@ -846,12 +851,16 @@ def get_course_schedule(instructor=None, stream=None):
 @frappe.whitelist()
 def get_course_schedule_details(schedule_name):
 	"""Returns details of a specific course schedule."""
-	return frappe.get_doc("Course Schedule", schedule_name).as_dict()
+	return frappe.get_doc("Course Schedule", schedule_name, ignore_permissions=True).as_dict()
 
 
 @frappe.whitelist()
 def update_course_schedule(schedule_name, schedule_date, from_time, to_time):
 	"""Updates course schedule time after drag/resize."""
+	# Instructors should not be able to update the timetable
+	if "Instructor" in frappe.get_roles() and "Education Manager" not in frappe.get_roles():
+		frappe.throw("You do not have permission to update the timetable", frappe.PermissionError)
+	
 	try:
 		doc = frappe.get_doc("Course Schedule", schedule_name)
 		doc.schedule_date = schedule_date
@@ -869,6 +878,10 @@ def update_course_schedule_details(
 	schedule_name, course, instructor, student_group, room, schedule_date, from_time, to_time
 ):
 	"""Updates all details of a course schedule."""
+	# Instructors should not be able to update the timetable
+	if "Instructor" in frappe.get_roles() and "Education Manager" not in frappe.get_roles():
+		frappe.throw("You do not have permission to update the timetable", frappe.PermissionError)
+	
 	try:
 		doc = frappe.get_doc("Course Schedule", schedule_name)
 		doc.course = course
@@ -890,6 +903,10 @@ def create_course_schedule(
 	course, instructor, student_group, room, schedule_date, from_time, to_time
 ):
 	"""Creates a new course schedule."""
+	# Instructors should not be able to create schedules
+	if "Instructor" in frappe.get_roles() and "Education Manager" not in frappe.get_roles():
+		frappe.throw("You do not have permission to create course schedules", frappe.PermissionError)
+	
 	try:
 		# Get program from student group
 		program = frappe.db.get_value("Student Group", student_group, "program")
