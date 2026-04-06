@@ -74,39 +74,6 @@
     });
   }
 
-  // Role-based sidebar filtering
-  function filterSidebarByRole() {
-    if (!frappe.user_roles) return;
-    
-    const isTeacher = frappe.user_roles.includes("Teacher");
-    const isBursar = frappe.user_roles.includes("Bursar") || frappe.user_roles.includes("Accounts Manager");
-    const isHeadteacher = frappe.user_roles.includes("Head Teacher") || frappe.user_roles.includes("School Administrator");
-    
-    // Define what each role should see
-    const teacherItems = ["Learner", "Attendance Register", "Marks / Results"];
-    const bursarItems = ["School Fees", "Fee Invoice", "Payment Entry"];
-    const headteacherItems = []; // Headteacher sees everything (read-only handled elsewhere)
-    
-    // Hide all sidebar items first, then show role-appropriate ones
-    document.querySelectorAll('.sidebar-nav-item').forEach(item => {
-      const label = item.getAttribute('data-label');
-      if (!label) return;
-      
-      let shouldShow = true;
-      
-      if (isTeacher && !teacherItems.includes(label)) {
-        shouldShow = false;
-      } else if (isBursar && !bursarItems.includes(label)) {
-        shouldShow = false;
-      }
-      // Headteacher sees everything, so no filtering
-      
-      if (!shouldShow) {
-        item.style.display = 'none';
-      }
-    });
-  }
-
   // Dashboard stats integration
   function loadDashboardStats() {
     if (!frappe.route_options || frappe.route_options.module !== "Education") return;
@@ -242,7 +209,6 @@
   // Initialize everything after DOM load and AJAX calls
   frappe.ready(function() {
     applyTerminology();
-    filterSidebarByRole();
     loadDashboardStats();
     optimizeStudentListView();
     enhanceFeeScheduleList();
@@ -252,7 +218,6 @@
 
   frappe.after_ajax(function() {
     applyTerminology();
-    filterSidebarByRole();
     loadDashboardStats();
     optimizeStudentListView();
     enhanceFeeScheduleList();
@@ -262,7 +227,6 @@
 
   frappe.after_route_change(function() {
     applyTerminology();
-    filterSidebarByRole();
     loadDashboardStats();
     optimizeStudentListView();
     enhanceFeeScheduleList();
