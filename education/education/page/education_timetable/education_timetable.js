@@ -13,6 +13,26 @@ frappe.pages["education-timetable"].on_page_load = function (wrapper) {
         </div>
         <div id="printable-timetable" class="d-none"></div>
 
+        <!-- Preview Modal -->
+        <div class="modal fade" id="timetablePreviewModal" tabindex="-1" role="dialog" aria-labelledby="timetablePreviewModalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-xl" role="document">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="timetablePreviewModalLabel">Timetable Preview</h5>
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                    </div>
+                    <div class="modal-body" id="timetable-preview-content" style="overflow-x: auto;">
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                        <button type="button" class="btn btn-primary" id="btn-print-timetable">Print Timetable</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <!-- Edit/Create Schedule Modal -->
         <div class="modal fade" id="scheduleModal" tabindex="-1" role="dialog" aria-labelledby="scheduleModalLabel" aria-hidden="true">
             <div class="modal-dialog" role="document">
@@ -170,10 +190,99 @@ frappe.pages["education-timetable"].on_page_load = function (wrapper) {
             padding: 15px;
         }
 
-        /* Increase time row height */
-        .fc-timegrid-slot {
-            height: 50px !important;
+        /* Event styling - cleaner and more compact with enhanced colors */
+        .fc-event {
+            border: none !important;
+            background-color: transparent !important;
+            color: var(--text-color) !important;
+            border-radius: 3px !important;
+            padding: 0 !important;
+            overflow: hidden;
         }
+        
+        .fc-event:hover {
+            background-color: var(--control-bg-hover) !important;
+        }
+
+        /* Month view - colored pill style events */
+        .fc-daygrid-event {
+            background-color: #e3f2fd !important; /* Light blue */
+            border-left: 3px solid #1976d2 !important; /* Darker blue */
+            border-radius: 4px !important;
+            margin-bottom: 2px !important;
+            padding: 2px 4px !important;
+            border: none !important;
+        }
+        
+        .fc-daygrid-event:hover {
+            background-color: #bbdefb !important;
+        }
+        
+        /* Timegrid view - horizontal swimlanes with colored backgrounds */
+        .fc-timegrid-event {
+            background-color: #e8f5e9 !important; /* Light green */
+            border-left: 4px solid #2e7d32 !important; /* Dark green */
+            border-radius: 4px !important;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.1) !important;
+        }
+        
+        .fc-timegrid-event:hover {
+            background-color: #c8e6c9 !important;
+        }
+
+        /* Break/Lunch events - warm orange/yellow theme */
+        .fc-daygrid-event.break-event, 
+        .fc-timegrid-event.break-event {
+            background-color: #fff8e1 !important; /* Light amber */
+            border-left-color: #ff8f00 !important; /* Amber */
+        }
+        
+        .break-event .fc-event-title-month, 
+        .break-event .fc-event-title-week,
+        .break-event div {
+            color: #e65100 !important;
+        }
+
+        /* Timegrid slot alternating background for "swimlane" effect */
+        .fc-timegrid-slot:nth-child(odd) {
+            background-color: rgba(0,0,0,0.02);
+        }
+        
+        /* Month view styling */
+        .fc-daygrid-day-frame {
+            padding: 2px;
+        }
+        .fc-daygrid-day-events {
+            margin-top: 2px !important;
+        }
+        .fc-daygrid-day-number {
+            font-size: 0.85em !important;
+            padding: 4px !important;
+            font-weight: 500 !important;
+        }
+
+        /* Timegrid view styling */
+        .fc-timegrid-slot {
+            height: 35px !important;
+        }
+        .fc-timegrid-event .fc-event-main-week {
+            padding: 2px 4px !important;
+        }
+        .fc-timegrid-event .fc-event-title-week {
+            font-size: 10px !important;
+            font-weight: 600 !important;
+            color: #1b5e20 !important;
+        }
+        .fc-timegrid-event div {
+            font-size: 9px !important;
+            color: #2e7d32 !important;
+        }
+
+        /* Current time indicator */
+        .fc-timegrid-now-indicator-line {
+            border-color: #f44336 !important;
+        }
+        
         /* Calendar button styling to match Frappe */
         .fc .fc-button-primary {
             background-color: var(--control-bg) !important;
@@ -346,6 +455,35 @@ frappe.pages["education-timetable"].on_page_load = function (wrapper) {
       // Responsive height
       height: isMobile ? "auto" : null,
       expandRows: !isMobile,
+      // Better event content rendering
+      eventContent: function(arg) {
+        const props = arg.event.extendedProps;
+        const view = arg.view.type;
+        const isBreak = arg.event.extendedProps.course?.includes("Break") || arg.event.extendedProps.course?.includes("Lunch");
+
+        let contentHtml = '';
+
+        if (view === 'dayGridMonth') {
+          contentHtml = `
+            <div class="fc-event-main-month" style="padding: 1px; font-size: 10px; line-height: 1.3;">
+              <div class="fc-event-title-month" style="font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                ${arg.event.title}
+              </div>
+              <div class="fc-event-time-month" style="font-size: 9px; opacity: 0.8;">
+                ${props.timeDisplay || ''}
+              </div>
+            </div>`;
+        } else { // timeGridWeek, timeGridDay
+          contentHtml = `
+            <div class="fc-event-main-week" style="padding: 2px 4px; font-size: 11px; line-height: 1.4;">
+              <div class="fc-event-title-week" style="font-weight: 600;">${arg.event.title}</div>
+              ${props.instructor ? `<div style="font-size: 10px; margin-top: 1px; opacity: 0.9;">${props.instructor}</div>` : ''}
+              ${props.room ? `<div style="font-size: 9px; opacity: 0.7;">Room: ${props.room}</div>` : ''}
+            </div>`;
+        }
+        
+        return { html: contentHtml };
+      },
       eventClick: function (info) {
         openEditModal(info.event.id);
       },
@@ -377,24 +515,28 @@ frappe.pages["education-timetable"].on_page_load = function (wrapper) {
                 }
                 return true;
               })
-              .map((event) => ({
-                id: event.name,
-                title: `${event.course} - ${event.instructor}`,
-                start: `${event.schedule_date}T${event.from_time}`,
-                end: `${event.schedule_date}T${event.to_time}`,
-                backgroundColor:
-                  event.course.includes("Break") ||
-                  event.course.includes("Lunch")
-                    ? "#f8d7da"
-                    : "#007bff",
-                extendedProps: {
-                  course: event.course,
-                  instructor: event.instructor,
-                  student_group: event.student_group,
-                  room: event.room,
-                  program: event.program,
-                },
-              }));
+              .map((event) => {
+                // Format time for display
+                const fromTime = event.from_time.substring(0, 5);
+                const toTime = event.to_time.substring(0, 5);
+                const isBreak = event.course && (event.course.includes("Break") || event.course.includes("Lunch"));
+                
+                return {
+                  id: event.name,
+                  title: event.course,
+                  start: `${event.schedule_date}T${event.from_time}`,
+                  end: `${event.schedule_date}T${event.to_time}`,
+                  classNames: isBreak ? ["break-event"] : [],
+                  extendedProps: {
+                    course: event.course,
+                    instructor: event.instructor_name || event.instructor,
+                    student_group: event.student_group,
+                    room: event.room,
+                    program: event.program,
+                    timeDisplay: `${fromTime} - ${toTime}`,
+                  },
+                };
+              });
             successCallback(events);
           },
         });
@@ -631,47 +773,85 @@ frappe.pages["education-timetable"].on_page_load = function (wrapper) {
     generatePrintableTimetable(selectedFilter, selectedValue);
   });
 
+  // Helper to convert 24h time string to minutes for comparison
+  function timeToMinutes(timeStr) {
+    if (!timeStr) return 0;
+    const parts = timeStr.split(":");
+    return parseInt(parts[0], 10) * 60 + parseInt(parts[1], 10);
+  }
+
+  // Helper to convert 12h time string to minutes
+  function time12ToMinutes(timeStr) {
+    if (!timeStr) return 0;
+    const match = timeStr.match(/(\d+):(\d+)\s*(AM|PM)/i);
+    if (!match) return 0;
+    let hours = parseInt(match[1], 10);
+    const minutes = parseInt(match[2], 10);
+    const period = match[3].toUpperCase();
+    if (period === "PM" && hours !== 12) hours += 12;
+    if (period === "AM" && hours === 12) hours = 0;
+    return hours * 60 + minutes;
+  }
+
+  // Helper to get day name from date
+  function getDayName(dateStr) {
+    const date = new Date(dateStr + "T00:00:00");
+    return date.toLocaleDateString("en-US", { weekday: "long" });
+  }
+
   function generatePrintableTimetable(filter_type, filter_value) {
+    let args = {};
+    
+    if (filter_type === "instructor" && filter_value) {
+      args.instructor = filter_value;
+    } else if (filter_type === "stream" && filter_value) {
+      args.stream = filter_value;
+    }
+    
+    if (selectedLevel) {
+      args.level = selectedLevel;
+    }
+    
     frappe.call({
       method:
         "education.education.api.get_course_schedule",
-      args: { [filter_type]: filter_value },
+      args: args,
       callback: function (response) {
         let schedules = response.message || [];
 
         let weekdays = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"];
 
-        // Pre-Primary time slots
+        // Pre-Primary time slots (using 24h format internally for matching)
         let prePrimaryTimeSlots = [
-          { start: "7:40 AM", end: "8:15 AM", label: "Breakfast" },
-          { start: "8:15 AM", end: "9:00 AM" },
-          { start: "9:00 AM", end: "9:45 AM" },
-          { start: "9:45 AM", end: "10:30 AM", label: "First Break" },
-          { start: "10:30 AM", end: "11:15 AM" },
-          { start: "11:15 AM", end: "11:30 AM" },
-          { start: "11:30 AM", end: "11:45 AM", label: "Second Break" },
-          { start: "11:45 AM", end: "12:30 PM" },
-          { start: "12:30 PM", end: "1:20 PM", label: "Lunch" },
-          { start: "1:20 PM", end: "2:15 PM" },
-          { start: "2:15 PM", end: "3:00 PM" },
+          { start: "07:40", end: "08:15", label: "Breakfast", display: "7:40 - 8:15 AM" },
+          { start: "08:15", end: "09:00", display: "8:15 - 9:00 AM" },
+          { start: "09:00", end: "09:45", display: "9:00 - 9:45 AM" },
+          { start: "09:45", end: "10:30", label: "First Break", display: "9:45 - 10:30 AM" },
+          { start: "10:30", end: "11:15", display: "10:30 - 11:15 AM" },
+          { start: "11:15", end: "11:30", display: "11:15 - 11:30 AM" },
+          { start: "11:30", end: "11:45", label: "Second Break", display: "11:30 - 11:45 AM" },
+          { start: "11:45", end: "12:30", display: "11:45 - 12:30 PM" },
+          { start: "12:30", end: "13:20", label: "Lunch", display: "12:30 - 1:20 PM" },
+          { start: "13:20", end: "14:15", display: "1:20 - 2:15 PM" },
+          { start: "14:15", end: "15:00", display: "2:15 - 3:00 PM" },
         ];
 
         let primaryTimeSlots = [
-          { start: "6:45 AM", end: "7:40 AM" },
-          { start: "7:40 AM", end: "8:10 AM", label: "Breakfast" },
-          { start: "8:10 AM", end: "8:55 AM" },
-          { start: "8:55 AM", end: "9:40 AM" },
-          { start: "9:40 AM", end: "9:50 AM", label: "First Break" },
-          { start: "9:50 AM", end: "10:35 AM" },
-          { start: "10:35 AM", end: "11:20 AM" },
-          { start: "11:20 AM", end: "11:30 AM", label: "Second Break" },
-          { start: "11:30 AM", end: "12:15 PM" },
-          { start: "12:15 PM", end: "1:00 PM" },
-          { start: "1:00 PM", end: "1:45 PM", label: "Lunch" },
-          { start: "1:45 PM", end: "1:55 PM" },
-          { start: "1:55 PM", end: "2:40 PM" },
-          { start: "2:40 PM", end: "3:25 PM" },
-          { start: "3:25 PM", end: "4:10 PM" },
+          { start: "06:45", end: "07:40", display: "6:45 - 7:40 AM" },
+          { start: "07:40", end: "08:10", label: "Breakfast", display: "7:40 - 8:10 AM" },
+          { start: "08:10", end: "08:55", display: "8:10 - 8:55 AM" },
+          { start: "08:55", end: "09:40", display: "8:55 - 9:40 AM" },
+          { start: "09:40", end: "09:50", label: "First Break", display: "9:40 - 9:50 AM" },
+          { start: "09:50", end: "10:35", display: "9:50 - 10:35 AM" },
+          { start: "10:35", end: "11:20", display: "10:35 - 11:20 AM" },
+          { start: "11:20", end: "11:30", label: "Second Break", display: "11:20 - 11:30 AM" },
+          { start: "11:30", end: "12:15", display: "11:30 AM - 12:15 PM" },
+          { start: "12:15", end: "13:00", display: "12:15 - 1:00 PM" },
+          { start: "13:00", end: "13:45", label: "Lunch", display: "1:00 - 1:45 PM" },
+          { start: "13:45", end: "13:55", display: "1:45 - 1:55 PM" },
+          { start: "13:55", end: "14:40", display: "1:55 - 2:40 PM" },
+          { start: "14:40", end: "15:25", display: "2:40 - 3:25 PM" },
+          { start: "15:25", end: "16:10", display: "3:25 - 4:10 PM" },
         ];
 
         let timeSlots =
@@ -689,18 +869,29 @@ frappe.pages["education-timetable"].on_page_load = function (wrapper) {
           title = `${selectedLevel.charAt(0).toUpperCase() + selectedLevel.slice(1)} School ${title}`;
         }
 
+        // Group schedules by day and time for aggregation (a weekly view consolidates schedules)
+        let schedulesByDayTime = {};
+        schedules.forEach((schedule) => {
+          let dayName = getDayName(schedule.schedule_date);
+          let fromTime = schedule.from_time.substring(0, 5); // Get HH:MM
+          let key = `${dayName}_${fromTime}`;
+          if (!schedulesByDayTime[key]) {
+            schedulesByDayTime[key] = schedule;
+          }
+        });
+
         let tableHTML = `
-                <h3 class="text-center">${title}</h3>
-                <div style="display: flex; justify-content: center; overflow-x: auto;">
-                    <table class="table table-bordered" style="table-layout: fixed; width: auto; margin: auto;">
+                <h3 class="text-center" style="margin-bottom: 20px; font-family: Arial, sans-serif;">${title}</h3>
+                <div style="overflow-x: auto; max-width: 100%;">
+                    <table class="timetable-table" style="width: 100%; min-width: 800px; border-collapse: collapse; font-family: Arial, sans-serif;">
                         <thead>
-                            <tr>
-                                <th style="width: 100px; text-align: center;">Day</th>
+                            <tr style="background-color: #f0f0f0; color: #333;">
+                                <th style="width: 70px; text-align: center; padding: 10px; font-weight: bold; border: 1px solid #ccc;">Day</th>
                                 ${timeSlots
                                   .map(
                                     (slot) => `
-                                    <th style="width: 150px; min-height: 80px; text-align: center; vertical-align: middle; font-size: 12px; font-weight: normal;">
-                                        ${slot.label ? `${removeAMPM(slot.start)} - ${removeAMPM(slot.end)}<br>(${slot.label})` : `${slot.start} - ${slot.end}`}
+                                    <th style="min-width: 70px; text-align: center; padding: 8px; font-size: 9px; border: 1px solid #ccc; ${slot.label ? 'background-color: #f0f0f0;' : ''}">
+                                        ${slot.display.split(' - ')[0]}${slot.label ? `<br><small>${slot.label}</small>` : ''}
                                     </th>`,
                                   )
                                   .join("")}
@@ -709,51 +900,67 @@ frappe.pages["education-timetable"].on_page_load = function (wrapper) {
                         <tbody>
                 `;
 
-        weekdays.forEach((day) => {
-          tableHTML += `<tr><td>${day}</td>`;
+        weekdays.forEach((day, dayIndex) => {
+          let rowBg = dayIndex % 2 === 0 ? '#fafafa' : '#ffffff';
+          tableHTML += `<tr><td style="text-align: center; font-weight: bold; padding: 10px; border: 1px solid #ddd; background-color: ${rowBg}; color: #333;">${day}</td>`;
 
           timeSlots.forEach((slot) => {
             // Check if this slot is a predefined break or meal time
             if (slot.label) {
-              tableHTML += `<td class="text-center" style="background-color: #f8d7da; font-size: 12px;">${slot.label}</td>`;
+              tableHTML += `<td style="text-align: center; background-color: #ffeef0; font-size: 10px; padding: 6px; border: 1px solid #ddd;">
+                <span style="font-weight: 600; color: #c00;">${slot.label}</span>
+              </td>`;
               return;
             }
 
+            // Find schedule that matches this day and time slot
+            let slotStartMinutes = timeToMinutes(slot.start);
+            let slotEndMinutes = timeToMinutes(slot.end);
+            
             let matchedSchedule = schedules.find((schedule) => {
-              let scheduleDay = new Date(schedule.schedule_date)
-                .toLocaleDateString("en-US", { weekday: "long" })
-                .trim();
-              let scheduleTime = convertTo12HourFormat(schedule.from_time);
-
-              return scheduleDay === day && scheduleTime === slot.start;
+              let scheduleDay = getDayName(schedule.schedule_date);
+              if (scheduleDay !== day) return false;
+              
+              // Get schedule time in minutes
+              let scheduleFromMinutes = timeToMinutes(schedule.from_time);
+              
+              // Check if schedule falls within this time slot (with some tolerance)
+              return Math.abs(scheduleFromMinutes - slotStartMinutes) <= 10;
             });
 
             if (matchedSchedule) {
-              let displayText = "";
+              let displayText = matchedSchedule.course || '';
+              let secondaryText = '';
 
-              if (showInstructor) {
-                displayText = `${matchedSchedule.course} - <span style="color: blue;">${matchedSchedule.instructor}</span>`;
-              } else if (showStudentGroup) {
-                displayText = `${matchedSchedule.course} - <span style="color: green;">${matchedSchedule.student_group}</span>`;
-              } else {
-                displayText = matchedSchedule.course;
+              if (showInstructor && matchedSchedule.instructor_name) {
+                secondaryText = matchedSchedule.instructor_name;
+              } else if (showStudentGroup && matchedSchedule.student_group) {
+                secondaryText = matchedSchedule.student_group;
+              } else if (matchedSchedule.instructor_name) {
+                secondaryText = matchedSchedule.instructor_name;
               }
 
-              tableHTML += `<td>${displayText}</td>`;
+              tableHTML += `<td style="text-align: center; padding: 4px; border: 1px solid #ddd; background-color: white;">
+                <div style="font-weight: 600; font-size: 10px; color: #333;">${displayText}</div>
+                ${secondaryText ? `<div style="font-size: 9px; color: #666; margin-top: 2px;">${secondaryText}</div>` : ''}
+              </td>`;
             } else {
-              tableHTML += `<td></td>`;
+              tableHTML += `<td style="border: 1px solid #ddd; background-color: ${rowBg};"></td>`;
             }
           });
 
           tableHTML += `</tr>`;
         });
 
-        tableHTML += `</tbody></table></div>`;
+        tableHTML += `</tbody></table></div>
+        <div style="margin-top: 15px; font-size: 10px; color: #666; text-align: center;">
+            Generated on ${new Date().toLocaleDateString()} | ${selectedLevel ? selectedLevel.charAt(0).toUpperCase() + selectedLevel.slice(1) : 'All Levels'} School
+        </div>`;
 
         let printableDiv = document.getElementById("printable-timetable");
         printableDiv.innerHTML = tableHTML;
         printableDiv.classList.remove("d-none");
-        printTimetable();
+        showPreview();
       },
     });
   }
@@ -774,38 +981,129 @@ frappe.pages["education-timetable"].on_page_load = function (wrapper) {
     return `${hours}:${minutes} ${period}`;
   }
 
-  // Print function
-  function printTimetable() {
+  // Print function - shows preview first
+  function showTimetablePreview() {
     let printContent = document.getElementById("printable-timetable").innerHTML;
-    let newWindow = window.open("", "", "width=1000,height=800");
+    document.getElementById("timetable-preview-content").innerHTML = printContent;
+    $("#timetablePreviewModal").modal("show");
+  }
+
+  // Print from preview modal
+  $("#btn-print-timetable").on("click", function () {
+    let printContent = document.getElementById("timetable-preview-content").innerHTML;
+    let newWindow = window.open("", "", "width=1200,height=800");
     newWindow.document.write(`
+            <!DOCTYPE html>
             <html>
             <head>
+                <meta charset="utf-8">
                 <title>School Timetable</title>
-                <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
                 <style>
+                    * {
+                        box-sizing: border-box;
+                        -webkit-print-color-adjust: exact;
+                        print-color-adjust: exact;
+                    }
+                    html, body {
+                        margin: 0;
+                        padding: 15px;
+                        font-family: Arial, Helvetica, sans-serif;
+                        font-size: 10px;
+                        width: 100%;
+                        background: white;
+                    }
+                    h3 {
+                        text-align: center;
+                        margin: 0 0 15px 0;
+                        font-size: 18px;
+                        color: #333;
+                        font-weight: 600;
+                    }
+                    .timetable-wrapper {
+                        width: 100%;
+                        overflow-x: visible;
+                    }
+                    .timetable-table {
+                        width: 100%;
+                        border-collapse: collapse;
+                        page-break-inside: avoid;
+                        table-layout: fixed;
+                    }
+                    .timetable-table th {
+                        background-color: #f0f0f0 !important;
+                        color: #333 !important;
+                        font-weight: bold;
+                        padding: 8px 4px;
+                        text-align: center;
+                        font-size: 9px;
+                        border: 1px solid #ccc;
+                    }
+                    .timetable-table td {
+                        border: 1px solid #ddd;
+                        padding: 4px;
+                        text-align: center;
+                        vertical-align: middle;
+                        font-size: 8px;
+                    }
+                    .timetable-table td.break-cell {
+                        background-color: #ffeef0 !important;
+                        color: #c00;
+                        font-weight: 600;
+                    }
+                    .timetable-table td.day-cell {
+                        background-color: #f5f5f5 !important;
+                        font-weight: bold;
+                        width: 70px;
+                    }
+                    .timetable-table tr:nth-child(even) td:not(.break-cell) {
+                        background-color: #fafafa;
+                    }
+                    .footer {
+                        margin-top: 15px;
+                        font-size: 9px;
+                        color: #666;
+                        text-align: center;
+                    }
+                    @page {
+                        size: landscape;
+                        margin: 10mm;
+                    }
                     @media print {
-                        .table th, .table td {
-                            padding: 8px;
-                            border: 1px solid #ddd;
+                        html, body {
+                            width: auto !important;
+                            margin: 0;
+                            padding: 10px;
                         }
-                        table {
+                        .timetable-wrapper {
+                            width: 100% !important;
+                            overflow: visible !important;
+                        }
+                        .timetable-table {
                             width: 100% !important;
                             table-layout: fixed;
                         }
-                        th, td {
-                            font-size: 10px;
-                            padding: 4px !important;
+                        .timetable-table th, .timetable-table td {
+                            padding: 3px !important;
+                            font-size: 7px;
                         }
                     }
                 </style>
             </head>
-            <body class="container-fluid mt-3">
-                ${printContent}
+            <body>
+                <div class="timetable-wrapper">
+                    ${printContent}
+                </div>
             </body>
             </html>
         `);
     newWindow.document.close();
-    newWindow.print();
+    setTimeout(() => newWindow.print(), 400);
+  });
+
+  // Show preview when clicking print button
+  function showPreview() {
+    let printContent = document.getElementById("printable-timetable").innerHTML;
+    document.getElementById("timetable-preview-content").innerHTML = printContent;
+    $("#timetablePreviewModal").modal("show");
   }
 };

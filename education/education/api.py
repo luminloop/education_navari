@@ -819,13 +819,13 @@ def get_courses():
 
 
 @frappe.whitelist()
-def get_course_schedule(instructor=None, stream=None):
+def get_course_schedule(instructor=None, stream=None, level=None):
 	"""Returns course schedule data for calendar."""
 	filters = {}
 	if instructor:
-		filters["instructor"] = instructor
+		filters["instructor"] = ["like", f"%{instructor}%"]
 	if stream:
-		filters["student_group"] = stream
+		filters["student_group"] = ["like", f"%{stream}%"]
 
 	schedules = frappe.get_all(
 		"Course Schedule",
@@ -845,6 +845,17 @@ def get_course_schedule(instructor=None, stream=None):
 		order_by="schedule_date, from_time",
 		ignore_permissions=True,
 	)
+	
+	if level:
+		level_programs = frappe.get_all(
+			"Program",
+			filters={"program_name": ["like", f"%{level}%"]},
+			fields=["name"],
+			ignore_permissions=True
+		)
+		level_program_names = [p.name for p in level_programs]
+		schedules = [s for s in schedules if s.program and s.program in level_program_names]
+	
 	return schedules
 
 
