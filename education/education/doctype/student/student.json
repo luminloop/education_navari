@@ -89,24 +89,27 @@
    "in_global_search": 1,
    "label": "Last Name"
   },
-  {
-   "fieldname": "user",
-   "fieldtype": "Link",
-   "label": "User ID",
-   "options": "User"
-  },
+{
+    "fieldname": "user",
+    "fieldtype": "Link",
+    "hidden": 1,
+    "label": "User ID",
+    "options": "User",
+    "read_only": 1
+   },
   {
    "fieldname": "column_break_4",
    "fieldtype": "Column Break"
   },
-  {
-   "fieldname": "naming_series",
-   "fieldtype": "Select",
-   "label": "Naming Series",
-   "no_copy": 1,
-   "options": "EDU-STU-.YYYY.-",
-   "set_only_once": 1
-  },
+{
+    "fieldname": "naming_series",
+    "fieldtype": "Select",
+    "hidden": 1,
+    "label": "Naming Series",
+    "no_copy": 1,
+    "options": "EDU-STU-.YYYY.-",
+    "set_only_once": 1
+   },
   {
    "fieldname": "student_email_id",
    "fieldtype": "Data",

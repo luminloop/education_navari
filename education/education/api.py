@@ -525,18 +525,25 @@ def get_student_info():
 	email = frappe.session.user
 	if email == "Administrator":
 		return
-	student_info = frappe.db.get_list(
+	
+	student_info = frappe.get_all(
 		"Student",
-		fields=["*"],
 		filters={"user": email},
-	)[0]
-
-	current_program = get_current_enrollment(student_info.name)
+		fields=["name"],
+		pluck="name"
+	)
+	
+	if not student_info:
+		return None
+	
+	student = frappe.get_doc("Student", student_info[0])
+	
+	current_program = get_current_enrollment(student.name)
 	if current_program:
-		student_groups = get_student_groups(student_info.name, current_program.program)
-		student_info["student_groups"] = student_groups
-		student_info["current_program"] = current_program
-	return student_info
+		student_groups = get_student_groups(student.name, current_program.program)
+		student.student_groups = student_groups
+		student.current_program = current_program
+	return student.as_dict()
 
 
 @frappe.whitelist()
