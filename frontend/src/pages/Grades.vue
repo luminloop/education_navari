@@ -26,6 +26,11 @@
       />
     </div>
   </div>
+  <div v-else-if="grades.loading">
+    <div class="flex items-center justify-center h-64">
+      <div class="text-gray-500">Loading grades...</div>
+    </div>
+  </div>
   <div v-else>
     <MissingData message="No grades found" />
   </div>
@@ -38,7 +43,7 @@ import {
   createResource,
   createListResource,
 } from 'frappe-ui'
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import { studentStore } from '@/stores/student'
 import { groupBy } from '@/utils'
 
@@ -46,8 +51,9 @@ import MissingData from '@/components/MissingData.vue'
 
 const { getCurrentProgram, getStudentInfo } = studentStore()
 
-let studentInfo = getStudentInfo().value
-let currentProgram = getCurrentProgram().value
+// Use computed to get reactive values from store
+const studentInfo = computed(() => getStudentInfo().value)
+const currentProgram = computed(() => getCurrentProgram().value)
 
 const allPrograms = ref([])
 const selectedProgram = ref('')
@@ -68,12 +74,9 @@ const tableData = ref({
 
 const student_programs = createResource({
   url: 'education.education.api.get_student_programs',
-  makeParams() {
-    return {
-      // student: studentInfo.value?.name
-      student: studentInfo.name,
-    }
-  },
+  params: () => ({
+    student: studentInfo.value?.name,
+  }),
   onSuccess: (response) => {
     let programs = []
     response.forEach((program) => {
@@ -82,8 +85,10 @@ const student_programs = createResource({
         onClick: () => (selectedProgram.value = program.program),
       })
     })
-    selectedProgram.value = programs[programs.length - 1].label
-    allPrograms.value = programs
+    if (programs.length > 0) {
+      selectedProgram.value = programs[programs.length - 1].label
+      allPrograms.value = programs
+    }
   },
   auto: true,
 })
@@ -99,12 +104,10 @@ const grades = createListResource({
     'maximum_score',
     'grade',
   ],
-  filters: {
-    student: studentInfo.name,
-    program: currentProgram.program,
-    // student:"EDU-STU-2023-00005",
-    // program:"Comp Science"
-  },
+  filters: () => ({
+    student: studentInfo.value?.name,
+    program: currentProgram.value?.program,
+  }),
   transform: () => {},
 
   onSuccess: (response) => {

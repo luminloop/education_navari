@@ -52,7 +52,7 @@
   </div>
 </template>
 <script setup>
-import { onMounted, reactive, ref } from 'vue'
+import { onMounted, reactive, ref, computed } from 'vue'
 import { leaveStore } from '@/stores/leave'
 import { studentStore } from '@/stores/student'
 
@@ -63,9 +63,11 @@ import Calendar from '@/components/Calendar.vue'
 import { createToast } from '@/utils'
 
 const { getCurrentProgram, getStudentInfo, getStudentGroups } = studentStore()
-const programName = ref(getCurrentProgram().value?.program)
 
-let studentInfo = getStudentInfo().value
+// Use computed for reactive values
+const studentInfo = computed(() => getStudentInfo().value)
+const programName = computed(() => getCurrentProgram().value?.program || 'Loading...')
+const studentGroups = computed(() => getStudentGroups().value || [])
 
 // storeToRefs converts isAttendancePage to a ref, hence achieving reactivity
 const { isAttendancePage } = storeToRefs(leaveStore())
@@ -76,35 +78,37 @@ onMounted(() => {
 
 const selectedGroup = ref('Select Student Group')
 const allStudentGroups = ref()
+
 function setStudentGroup() {
-  allStudentGroups.value = getStudentGroups().value
-  allStudentGroups.value.forEach(
-    (group) =>
-      (group.onClick = () => {
+  const groups = studentGroups.value
+  if (groups && groups.length > 0) {
+    allStudentGroups.value = groups.map(group => ({
+      label: group.label,
+      onClick: () => {
         if (group.label === selectedGroup.value) return
         selectedGroup.value = group.label
         attendanceResource.reload()
-      })
-  )
-  selectedGroup.value =
-    allStudentGroups.value[0].label || 'Select Student Group'
-  attendanceResource.update({
-    params: {
-      student_group: selectedGroup.value,
-      student: studentInfo.name,
-    },
-  })
-  attendanceResource.reload()
+      }
+    }))
+    selectedGroup.value = groups[0].label || 'Select Student Group'
+    attendanceResource.update({
+      params: {
+        student_group: selectedGroup.value,
+        student: studentInfo.value?.name,
+      },
+    })
+    attendanceResource.reload()
+  }
 }
 
-const newLeave = reactive({
-  student: studentInfo.name,
-  student_name: studentInfo.student_name,
+const newLeave = computed(() => ({
+  student: studentInfo.value?.name || '',
+  student_name: studentInfo.value?.student_name || '',
   from_date: '',
   to_date: '',
   reason: '',
   total_days: '',
-})
+}))
 
 const attendanceStatus = {
   Present: 'bg-green-100',
@@ -114,10 +118,10 @@ const attendanceStatus = {
 
 const attendanceResource = createResource({
   url: 'education.education.api.get_student_attendance',
-  params: {
+  params: () => ({
     student_group: selectedGroup.value,
-    student: studentInfo.name,
-  },
+    student: studentInfo.value?.name,
+  }),
   transform: (attendance) => {
     // filter attendance to remove duplicate attendance data
     attendance = attendance.filter(

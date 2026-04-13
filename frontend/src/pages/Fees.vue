@@ -65,7 +65,7 @@
 </template>
 
 <script setup>
-import { reactive, ref } from 'vue'
+import { reactive, ref, computed } from 'vue'
 import {
   ListView,
   ListHeader,
@@ -81,27 +81,33 @@ import MissingData from '@/components/MissingData.vue'
 import { createToast } from '@/utils'
 
 const { getStudentInfo } = studentStore()
-let studentInfo = getStudentInfo().value
+
+// Use computed for reactive values
+const studentInfo = computed(() => getStudentInfo().value)
 
 const feesResource = createResource({
   url: 'education.education.api.get_student_invoices',
-  params: {
-    student: studentInfo.name,
-  },
+  params: () => ({
+    student: studentInfo.value?.name,
+  }),
   onSuccess: (response) => {
     printFormat = response?.print_format
     let invoices = response?.invoices
-    invoices = invoices.sort((a, b) => {
-      const statusOrder = { Overdue: 0, Unpaid: 1, Paid: 2 }
+    if (invoices && invoices.length > 0) {
+      invoices = invoices.sort((a, b) => {
+        const statusOrder = { Overdue: 0, Unpaid: 1, Paid: 2 }
 
-      const statusA = statusOrder[a.status]
-      const statusB = statusOrder[b.status]
+        const statusA = statusOrder[a.status]
+        const statusB = statusOrder[b.status]
 
-      if (statusA !== statusB) {
-        return statusA - statusB
-      }
-    })
-    tableData.rows = invoices
+        if (statusA !== statusB) {
+          return statusA - statusB
+        }
+      })
+      tableData.rows = invoices
+    } else {
+      tableData.rows = []
+    }
   },
   auto: true,
 })
