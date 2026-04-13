@@ -4,7 +4,11 @@ import { sessionStore } from '@/stores/session'
 import { studentStore } from '@/stores/student'
 
 const routes = [
-  { path: '/', redirect: '/schedule' },
+  {
+    path: '/',
+    name: 'Home',
+    component: () => import('@/pages/Home.vue'),
+  },
   {
     path: '/schedule',
     name: 'Schedule',
@@ -27,7 +31,7 @@ const routes = [
   },
   {
     path: '/:catchAll(.*)',
-    redirect: '/schedule',
+    redirect: '/',
   },
 ]
 

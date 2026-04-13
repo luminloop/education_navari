@@ -709,7 +709,7 @@ def get_student_invoices(student):
 	student_sales_invoices = []
 
 	# Debug: log student and current user
-	print(f"=== get_student_invoices called with student={student}, user={frappe.session.user} ===")
+	frappe.log_error(f"get_student_invoices called with student={student}, user={frappe.session.user}", "Invoice Debug")
 	
 	try:
 		# First, let's just get ALL sales invoices for this student without filters
@@ -721,8 +721,7 @@ def get_student_invoices(student):
 			AND docstatus IN (0, 1)
 		""", (student,), as_dict=True)
 		
-		print(f"Found {len(sales_invoice_list)} invoices via raw SQL")
-		print(f"Invoices: {sales_invoice_list}")
+		frappe.log_error(f"Found {len(sales_invoice_list)} invoices: {sales_invoice_list}", "Invoice Debug")
 
 		for si in sales_invoice_list:
 			# Skip if status is not relevant
@@ -750,12 +749,10 @@ def get_student_invoices(student):
 			student_sales_invoices.append(student_program_invoice_status)
 			
 	except Exception as e:
-		print(f"Error: {str(e)}")
-		traceback.print_exc()
-		frappe.log_error(f"Error in get_student_invoices: {str(e)}", "Student Invoices Error")
+		frappe.log_error(f"Error in get_student_invoices: {str(e)}\n{traceback.format_exc()}", "Invoice Error")
 		raise
 
-	print(f"Final invoices list: {student_sales_invoices}")
+	frappe.log_error(f"Final invoices list: {student_sales_invoices}", "Invoice Debug")
 	print_format = get_fees_print_format() or "Standard"
 
 	return {"invoices": student_sales_invoices, "print_format": print_format}
