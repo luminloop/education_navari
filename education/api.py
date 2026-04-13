@@ -522,33 +522,43 @@ def get_user_info():
 
 @frappe.whitelist()
 def get_student_info():
+	import traceback
 	email = frappe.session.user
 	if email == "Administrator":
 		return
 	
-	students = frappe.get_all(
-		"Student",
-		filters={"user": email},
-		fields=["name"],
-		pluck="name"
-	)
-	
-	if not students:
-		return None
-	
-	student = frappe.get_doc("Student", students[0])
-	
-	current_program = get_current_enrollment(student.name)
-	student_groups = []
-	if current_program:
-		student_groups = get_student_groups(student.name, current_program.program)
-		student.current_program = current_program
-	
-	# Convert to dict for return
-	student_dict = student.as_dict()
-	student_dict["student_groups"] = student_groups
-	
-	return student_dict
+	try:
+		students = frappe.get_all(
+			"Student",
+			filters={"user": email},
+			fields=["name"],
+			pluck="name"
+		)
+		
+		if not students:
+			return None
+		
+		student = frappe.get_doc("Student", students[0])
+		
+		# Import and call directly without @frappe.whitelist wrapper to avoid issues
+		from education.education.api import get_current_enrollment as _get_current_enrollment
+		current_program = _get_current_enrollment(student.name)
+		
+		student_groups = []
+		if current_program:
+			from education.education.api import get_student_groups as _get_student_groups
+			student_groups = _get_student_groups(student.name, current_program.program)
+		
+		# Convert to dict for return
+		student_dict = student.as_dict()
+		student_dict["current_program"] = current_program
+		student_dict["student_groups"] = student_groups
+		
+		return student_dict
+		
+	except Exception as e:
+		frappe.log_error(f"Error in get_student_info: {str(e)}\n{traceback.format_exc()}", "Student Info Error")
+		raise
 
 
 @frappe.whitelist()

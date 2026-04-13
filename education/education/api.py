@@ -526,24 +526,29 @@ def get_student_info():
 	if email == "Administrator":
 		return
 	
-	student_info = frappe.get_all(
+	students = frappe.get_all(
 		"Student",
 		filters={"user": email},
 		fields=["name"],
 		pluck="name"
 	)
 	
-	if not student_info:
+	if not students:
 		return None
 	
-	student = frappe.get_doc("Student", student_info[0])
+	student = frappe.get_doc("Student", students[0])
 	
 	current_program = get_current_enrollment(student.name)
+	student_groups = []
 	if current_program:
 		student_groups = get_student_groups(student.name, current_program.program)
-		student.student_groups = student_groups
-		student.current_program = current_program
-	return student.as_dict()
+	
+	# Convert to dict for return - add fields directly to avoid Frappe dict issue
+	student_dict = student.as_dict()
+	student_dict["current_program"] = current_program
+	student_dict["student_groups"] = student_groups
+	
+	return student_dict
 
 
 @frappe.whitelist()
@@ -700,27 +705,19 @@ def apply_leave_based_on_student_group(leave_data, program_name):
 def get_student_invoices(student):
 	student_sales_invoices = []
 
-	sales_invoice_list = frappe.db.get_list(
-		"Sales Invoice",
-		filters={
-			"student": student,
-			"status": ["in", ["Paid", "Unpaid", "Overdue", "Partly Paid"]],
-			"docstatus": 1,
-		},
-		fields=[
-			"name",
-			"status",
-			"student",
-			"due_date",
-			"fee_schedule",
-			"outstanding_amount",
-			"currency",
-			"grand_total",
-		],
-		order_by="status desc",
-	)
+	# Use raw SQL to get all invoices including Draft
+	sales_invoice_list = frappe.db.sql("""
+		SELECT name, status, student, due_date, fee_schedule, outstanding_amount, currency, grand_total, docstatus
+		FROM `tabSales Invoice`
+		WHERE student = %s
+		AND docstatus IN (0, 1)
+	""", (student,), as_dict=True)
 
 	for si in sales_invoice_list:
+		# Skip if status is not relevant
+		if si.status not in ["Paid", "Unpaid", "Overdue", "Partly Paid", "Draft"]:
+			continue
+			
 		student_program_invoice_status = {}
 		student_program_invoice_status["status"] = si.status
 		student_program_invoice_status["program"] = get_program_from_fee_schedule(
