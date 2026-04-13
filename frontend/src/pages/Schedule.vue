@@ -19,29 +19,29 @@
 <script setup>
 import Calendar from '@/components/Calendar.vue'
 import { createResource } from 'frappe-ui'
-import { ref, watch } from 'vue'
+import { ref, computed } from 'vue'
 import { studentStore } from '@/stores/student'
 
 const { getCurrentProgram, getStudentGroups } = studentStore()
 
 const events = ref([])
 
-// Function to get current values from store
-function getProgramName() {
-  const program = getCurrentProgram()
-  return program?.value?.program || null
-}
+// Use computed to get reactive values from store
+const programName = computed(() => {
+  const program = getCurrentProgram().value
+  return program?.program || null
+})
 
-function getStudentGroup() {
+const studentGroupList = computed(() => {
   return getStudentGroups().value || []
-}
+})
 
-// Create resource with function that gets current values
+// Create resource with computed values
 const scheduleResource = createResource({
   url: 'education.education.api.get_course_schedule_for_student',
   params: () => ({
-    program_name: getProgramName(),
-    student_groups: getStudentGroup(),
+    program_name: programName.value,
+    student_groups: studentGroupList.value,
   }),
   onSuccess: (response) => {
     let schedule = []

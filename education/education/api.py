@@ -553,6 +553,8 @@ def get_student_info():
 
 @frappe.whitelist()
 def get_student_programs(student):
+	if not student:
+		return []
 	# student = 'EDU-STU-2023-00043'
 	programs = frappe.db.get_list(
 		"Program Enrollment",
@@ -705,6 +707,9 @@ def apply_leave_based_on_student_group(leave_data, program_name):
 def get_student_invoices(student):
 	student_sales_invoices = []
 
+	if not student:
+		return {"invoices": [], "print_format": "Standard"}
+	
 	# Use raw SQL to get all invoices including Draft
 	sales_invoice_list = frappe.db.sql("""
 		SELECT name, status, student, due_date, fee_schedule, outstanding_amount, currency, grand_total, docstatus
@@ -795,6 +800,7 @@ def get_student_attendance(student, student_group):
 		"Student Attendance",
 		filters={"student": student, "student_group": student_group, "docstatus": 1},
 		fields=["date", "status", "name"],
+		ignore_permissions=True,
 	)
 
 

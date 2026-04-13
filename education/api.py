@@ -563,6 +563,8 @@ def get_student_info():
 
 @frappe.whitelist()
 def get_student_programs(student):
+	if not student:
+		return []
 	# student = 'EDU-STU-2023-00043'
 	programs = frappe.db.get_list(
 		"Program Enrollment",
@@ -605,13 +607,19 @@ def get_course_list_based_on_program(program_name):
 
 @frappe.whitelist()
 def get_course_schedule_for_student(program_name=None, student_groups=None):
+	# Handle null or undefined - return empty if no program
+	if not program_name:
+		return []
+		
 	# Handle both list of objects with 'label' and list of plain strings
+	group_names = []
 	if student_groups and isinstance(student_groups, list) and len(student_groups) > 0:
 		if isinstance(student_groups[0], str):
 			group_names = student_groups
 		else:
 			group_names = [sg.get("label") for sg in student_groups]
-		
+	
+	if group_names:
 		# Filter by both program and student groups
 		schedule = frappe.db.get_list(
 			"Course Schedule",
