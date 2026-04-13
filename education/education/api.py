@@ -553,6 +553,7 @@ def get_student_programs(student):
 		"Program Enrollment",
 		fields=["program", "name"],
 		filters={"docstatus": 1, "student": student},
+		ignore_permissions=True,
 	)
 	return programs
 
@@ -588,25 +589,51 @@ def get_course_list_based_on_program(program_name):
 
 
 @frappe.whitelist()
-def get_course_schedule_for_student(program_name, student_groups):
-	student_groups = [sg.get("label") for sg in student_groups]
-
-	schedule = frappe.db.get_list(
-		"Course Schedule",
-		fields=[
-			"schedule_date",
-			"room",
-			"class_schedule_color",
-			"course",
-			"from_time",
-			"to_time",
-			"instructor",
-			"title",
-			"name",
-		],
-		filters={"program": program_name, "student_group": ["in", student_groups]},
-		order_by="schedule_date asc",
-	)
+def get_course_schedule_for_student(program_name, student_groups=None):
+	# Handle both list of objects with 'label' and list of plain strings
+	if student_groups and isinstance(student_groups, list) and len(student_groups) > 0:
+		if isinstance(student_groups[0], str):
+			group_names = student_groups
+		else:
+			group_names = [sg.get("label") for sg in student_groups]
+		
+		# Filter by both program and student groups
+		schedule = frappe.db.get_list(
+			"Course Schedule",
+			fields=[
+				"schedule_date",
+				"room",
+				"class_schedule_color",
+				"course",
+				"from_time",
+				"to_time",
+				"instructor",
+				"title",
+				"name",
+			],
+			filters={"program": program_name, "student_group": ["in", group_names]},
+			order_by="schedule_date asc",
+			ignore_permissions=True,
+		)
+	else:
+		# Fall back to just program if no groups specified
+		schedule = frappe.db.get_list(
+			"Course Schedule",
+			fields=[
+				"schedule_date",
+				"room",
+				"class_schedule_color",
+				"course",
+				"from_time",
+				"to_time",
+				"instructor",
+				"title",
+				"name",
+			],
+			filters={"program": program_name},
+			order_by="schedule_date asc",
+			ignore_permissions=True,
+		)
 	return schedule
 
 

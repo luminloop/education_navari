@@ -4,25 +4,28 @@
  "doctype": "DocType",
  "editable_grid": 1,
  "engine": "InnoDB",
- "field_order": [
-  "student",
-  "student_name",
-  "program",
-  "student_batch",
-  "column_break_3",
-  "assessment_group",
-  "academic_year",
-  "academic_term",
-  "section_break_5",
-  "add_letterhead",
-  "letter_head",
-  "parents_meeting",
-  "parents_attendance",
-  "column_break_15",
-  "show_marks",
-  "terms",
-  "assessment_terms"
- ],
+"field_order": [
+   "student",
+   "student_name",
+   "program",
+   "student_batch",
+   "column_break_3",
+   "assessment_group",
+   "academic_year",
+   "academic_term",
+   "section_break_5",
+   "add_letterhead",
+   "letter_head",
+   "parents_meeting",
+   "parents_attendance",
+   "column_break_15",
+   "show_marks",
+   "terms",
+   "assessment_terms",
+   "section_break_signature",
+   "include_principal_signature",
+   "include_teacher_comments"
+  ],
  "fields": [
   {
    "fieldname": "student",
@@ -116,18 +119,35 @@
    "label": "Terms",
    "options": "Terms and Conditions"
   },
-  {
-   "fetch_from": "terms.terms",
-   "fieldname": "assessment_terms",
-   "fieldtype": "Small Text",
-   "label": "Assessment Terms",
-   "read_only": 1
-  },
-  {
-   "fieldname": "column_break_15",
-   "fieldtype": "Column Break"
-  }
- ],
+{
+    "fetch_from": "terms.terms",
+    "fieldname": "assessment_terms",
+    "fieldtype": "Small Text",
+    "label": "Assessment Terms",
+    "read_only": 1
+   },
+   {
+    "fieldname": "section_break_signature",
+    "fieldtype": "Section Break",
+    "label": "Signatures & Comments"
+   },
+   {
+    "default": "0",
+    "fieldname": "include_principal_signature",
+    "fieldtype": "Check",
+    "label": "Include Principal Signature"
+   },
+{
+     "default": "1",
+     "fieldname": "include_teacher_comments",
+     "fieldtype": "Check",
+     "label": "Include Teacher Comments"
+    },
+    {
+     "fieldname": "column_break_15",
+     "fieldtype": "Column Break"
+    }
+   ],
  "hide_toolbar": 1,
  "issingle": 1,
  "links": [],

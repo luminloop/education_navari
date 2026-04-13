@@ -525,18 +525,30 @@ def get_student_info():
 	email = frappe.session.user
 	if email == "Administrator":
 		return
-	student_info = frappe.db.get_list(
+	
+	students = frappe.get_all(
 		"Student",
-		fields=["*"],
 		filters={"user": email},
-	)[0]
-
-	current_program = get_current_enrollment(student_info.name)
+		fields=["name"],
+		pluck="name"
+	)
+	
+	if not students:
+		return None
+	
+	student = frappe.get_doc("Student", students[0])
+	
+	current_program = get_current_enrollment(student.name)
+	student_groups = []
 	if current_program:
-		student_groups = get_student_groups(student_info.name, current_program.program)
-		student_info["student_groups"] = student_groups
-		student_info["current_program"] = current_program
-	return student_info
+		student_groups = get_student_groups(student.name, current_program.program)
+		student.current_program = current_program
+	
+	# Convert to dict for return
+	student_dict = student.as_dict()
+	student_dict["student_groups"] = student_groups
+	
+	return student_dict
 
 
 @frappe.whitelist()
@@ -546,6 +558,7 @@ def get_student_programs(student):
 		"Program Enrollment",
 		fields=["program", "name"],
 		filters={"docstatus": 1, "student": student},
+		ignore_permissions=True,
 	)
 	return programs
 
@@ -581,25 +594,53 @@ def get_course_list_based_on_program(program_name):
 
 
 @frappe.whitelist()
-def get_course_schedule_for_student(program_name, student_groups):
-	student_groups = [sg.get("label") for sg in student_groups]
-
-	schedule = frappe.db.get_list(
-		"Course Schedule",
-		fields=[
-			"schedule_date",
-			"room",
-			"class_schedule_color",
-			"course",
-			"from_time",
-			"to_time",
-			"instructor",
-			"title",
-			"name",
-		],
-		filters={"program": program_name, "student_group": ["in", student_groups]},
-		order_by="schedule_date asc",
-	)
+def get_course_schedule_for_student(program_name=None, student_groups=None):
+	# Handle both list of objects with 'label' and list of plain strings
+	if student_groups and isinstance(student_groups, list) and len(student_groups) > 0:
+		if isinstance(student_groups[0], str):
+			group_names = student_groups
+		else:
+			group_names = [sg.get("label") for sg in student_groups]
+		
+		# Filter by both program and student groups
+		schedule = frappe.db.get_list(
+			"Course Schedule",
+			fields=[
+				"schedule_date",
+				"room",
+				"class_schedule_color",
+				"course",
+				"from_time",
+				"to_time",
+				"instructor",
+				"title",
+				"name",
+			],
+			filters={"program": program_name, "student_group": ["in", group_names]},
+			order_by="schedule_date asc",
+			ignore_permissions=True,
+		)
+	elif program_name:
+		# Fall back to just program if no groups specified
+		schedule = frappe.db.get_list(
+			"Course Schedule",
+			fields=[
+				"schedule_date",
+				"room",
+				"class_schedule_color",
+				"course",
+				"from_time",
+				"to_time",
+				"instructor",
+				"title",
+				"name",
+			],
+			filters={"program": program_name},
+			order_by="schedule_date asc",
+			ignore_permissions=True,
+		)
+	else:
+		schedule = []
 	return schedule
 
 
@@ -664,49 +705,57 @@ def apply_leave_based_on_student_group(leave_data, program_name):
 
 @frappe.whitelist()
 def get_student_invoices(student):
+	import traceback
 	student_sales_invoices = []
 
-	sales_invoice_list = frappe.db.get_list(
-		"Sales Invoice",
-		filters={
-			"student": student,
-			"status": ["in", ["Paid", "Unpaid", "Overdue", "Partly Paid"]],
-			"docstatus": 1,
-		},
-		fields=[
-			"name",
-			"status",
-			"student",
-			"due_date",
-			"fee_schedule",
-			"outstanding_amount",
-			"currency",
-			"grand_total",
-		],
-		order_by="status desc",
-	)
+	# Debug: log student and current user
+	print(f"=== get_student_invoices called with student={student}, user={frappe.session.user} ===")
+	
+	try:
+		# First, let's just get ALL sales invoices for this student without filters
+		# Use raw SQL approach
+		sales_invoice_list = frappe.db.sql("""
+			SELECT name, status, student, due_date, fee_schedule, outstanding_amount, currency, grand_total, docstatus
+			FROM `tabSales Invoice`
+			WHERE student = %s
+			AND docstatus IN (0, 1)
+		""", (student,), as_dict=True)
+		
+		print(f"Found {len(sales_invoice_list)} invoices via raw SQL")
+		print(f"Invoices: {sales_invoice_list}")
 
-	for si in sales_invoice_list:
-		student_program_invoice_status = {}
-		student_program_invoice_status["status"] = si.status
-		student_program_invoice_status["program"] = get_program_from_fee_schedule(
-			si.fee_schedule
-		)
-		symbol = get_currency_symbol(si.get("currency", "INR"))
-		student_program_invoice_status["amount"] = symbol + " " + str(si.outstanding_amount)
-		student_program_invoice_status["invoice"] = si.name
-		if si.status == "Paid":
-			student_program_invoice_status["amount"] = symbol + " " + str(si.grand_total)
-			student_program_invoice_status[
-				"payment_date"
-			] = get_posting_date_from_payment_entry_against_sales_invoice(si.name)
-			student_program_invoice_status["due_date"] = "-"
-		else:
-			student_program_invoice_status["due_date"] = si.due_date
-			student_program_invoice_status["payment_date"] = "-"
+		for si in sales_invoice_list:
+			# Skip if status is not relevant
+			if si.status not in ["Paid", "Unpaid", "Overdue", "Partly Paid", "Draft"]:
+				continue
+				
+			student_program_invoice_status = {}
+			student_program_invoice_status["status"] = si.status
+			student_program_invoice_status["program"] = get_program_from_fee_schedule(
+				si.fee_schedule
+			)
+			symbol = get_currency_symbol(si.get("currency", "INR"))
+			student_program_invoice_status["amount"] = symbol + " " + str(si.outstanding_amount)
+			student_program_invoice_status["invoice"] = si.name
+			if si.status == "Paid":
+				student_program_invoice_status["amount"] = symbol + " " + str(si.grand_total)
+				student_program_invoice_status[
+					"payment_date"
+				] = get_posting_date_from_payment_entry_against_sales_invoice(si.name)
+				student_program_invoice_status["due_date"] = "-"
+			else:
+				student_program_invoice_status["due_date"] = si.due_date
+				student_program_invoice_status["payment_date"] = "-"
 
-		student_sales_invoices.append(student_program_invoice_status)
+			student_sales_invoices.append(student_program_invoice_status)
+			
+	except Exception as e:
+		print(f"Error: {str(e)}")
+		traceback.print_exc()
+		frappe.log_error(f"Error in get_student_invoices: {str(e)}", "Student Invoices Error")
+		raise
 
+	print(f"Final invoices list: {student_sales_invoices}")
 	print_format = get_fees_print_format() or "Standard"
 
 	return {"invoices": student_sales_invoices, "print_format": print_format}
@@ -742,10 +791,20 @@ def get_fees_print_format():
 
 
 def get_program_from_fee_schedule(fee_schedule):
-
+	if not fee_schedule:
+		return None
+	
 	program = frappe.db.get_value(
 		"Fee Schedule", filters={"name": fee_schedule}, fieldname=["program"]
 	)
+	
+	# If program is None/empty, try to get from student groups
+	if not program:
+		fs = frappe.get_doc("Fee Schedule", fee_schedule)
+		if fs.student_groups:
+			first_group = fs.student_groups[0].student_group
+			program = frappe.db.get_value("Student Group", first_group, "program")
+	
 	return program
 
 
