@@ -19,12 +19,18 @@
 <script setup>
 import Calendar from '@/components/Calendar.vue'
 import { createResource } from 'frappe-ui'
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { studentStore } from '@/stores/student'
 
-const { getCurrentProgram, getStudentGroups } = studentStore()
+const { getCurrentProgram, getStudentGroups, student } = studentStore()
 
 const events = ref([])
+
+// Fetch student info first, then schedule
+onMounted(async () => {
+  await student.fetch()
+  scheduleResource.fetch()
+})
 
 // Use computed to get reactive values from store
 const programName = computed(() => {
@@ -47,6 +53,7 @@ const scheduleResource = createResource({
     let schedule = []
     response.forEach((classSchedule) => {
       schedule.push({
+        id: classSchedule.name,
         title: classSchedule.title,
         with: classSchedule.instructor,
         name: classSchedule.name,
@@ -59,7 +66,7 @@ const scheduleResource = createResource({
     })
     events.value = schedule
   },
-  auto: true,
+  auto: false,
 })
 </script>
 

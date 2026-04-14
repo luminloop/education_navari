@@ -65,7 +65,7 @@
 </template>
 
 <script setup>
-import { reactive, ref, computed } from 'vue'
+import { reactive, ref, computed, onMounted } from 'vue'
 import {
   ListView,
   ListHeader,
@@ -80,10 +80,16 @@ import { studentStore } from '@/stores/student'
 import MissingData from '@/components/MissingData.vue'
 import { createToast } from '@/utils'
 
-const { getStudentInfo } = studentStore()
+const { getStudentInfo, student } = studentStore()
 
 // Use computed for reactive values
 const studentInfo = computed(() => getStudentInfo().value)
+
+// Fetch student info first, then fees
+onMounted(async () => {
+  await student.fetch()
+  feesResource.fetch()
+})
 
 const feesResource = createResource({
   url: 'education.education.api.get_student_invoices',
@@ -109,7 +115,7 @@ const feesResource = createResource({
       tableData.rows = []
     }
   },
-  auto: true,
+  auto: false,
 })
 
 const tableData = reactive({
@@ -181,6 +187,7 @@ const badgeColor = (status) => {
     Unpaid: 'red',
     Overdue: 'red',
     'Partly Paid': 'orange',
+    Draft: 'blue',
   }
   return badgeColorMap[status]
 }

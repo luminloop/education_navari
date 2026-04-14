@@ -562,10 +562,9 @@ def get_student_info():
 
 
 @frappe.whitelist()
-def get_student_programs(student):
+def get_student_programs(student=None, **kwargs):
 	if not student:
 		return []
-	# student = 'EDU-STU-2023-00043'
 	programs = frappe.db.get_list(
 		"Program Enrollment",
 		fields=["program", "name"],
@@ -606,8 +605,7 @@ def get_course_list_based_on_program(program_name):
 
 
 @frappe.whitelist()
-def get_course_schedule_for_student(program_name=None, student_groups=None):
-	# Handle null or undefined - return empty if no program
+def get_course_schedule_for_student(program_name=None, student_groups=None, **kwargs):
 	if not program_name:
 		return []
 		
@@ -722,7 +720,10 @@ def apply_leave_based_on_student_group(leave_data, program_name):
 
 
 @frappe.whitelist()
-def get_student_invoices(student):
+def get_student_invoices(student=None, **kwargs):
+	if not student:
+		return {"invoices": [], "print_format": "Standard"}
+	
 	import traceback
 	student_sales_invoices = []
 
@@ -833,9 +834,192 @@ def get_school_abbr_logo():
 
 
 @frappe.whitelist()
-def get_student_attendance(student, student_group):
+def get_student_attendance(student=None, student_group=None, **kwargs):
+	if not student or not student_group:
+		return []
 	return frappe.db.get_list(
 		"Student Attendance",
 		filters={"student": student, "student_group": student_group, "docstatus": 1},
 		fields=["date", "status", "name"],
 	)
+
+
+# Timetable API methods
+@frappe.whitelist()
+def get_teachers():
+	instructors = frappe.get_all(
+		"Instructor",
+		filters={"status": "Active"},
+		fields=["name", "instructor_name"],
+		order_by="instructor_name",
+		ignore_permissions=True,
+	)
+	return [{"value": i.name, "label": i.instructor_name or i.name} for i in instructors]
+
+
+@frappe.whitelist()
+def get_streams():
+	student_groups = frappe.get_all(
+		"Student Group",
+		filters={"disabled": 0},
+		fields=["name", "student_group_name"],
+		order_by="student_group_name",
+		ignore_permissions=True,
+	)
+	return [{"value": sg.name, "label": sg.student_group_name or sg.name} for sg in student_groups]
+
+
+@frappe.whitelist()
+def get_rooms():
+	rooms = frappe.get_all(
+		"Room",
+		fields=["name", "room_name"],
+		order_by="room_name",
+		ignore_permissions=True,
+	)
+	return [{"value": r.name, "label": r.room_name or r.name} for r in rooms]
+
+
+@frappe.whitelist()
+def get_courses():
+	courses = frappe.get_all(
+		"Course",
+		fields=["name", "course_name"],
+		order_by="course_name",
+		ignore_permissions=True,
+	)
+	return [{"value": c.name, "label": c.course_name or c.name} for c in courses]
+
+
+@frappe.whitelist()
+def get_course_schedule(instructor=None, stream=None, level=None):
+	filters = {}
+	if instructor:
+		filters["instructor"] = ["like", f"%{instructor}%"]
+	if stream:
+		filters["student_group"] = ["like", f"%{stream}%"]
+
+	schedules = frappe.get_all(
+		"Course Schedule",
+		filters=filters,
+		fields=[
+			"name",
+			"course",
+			"instructor",
+			"instructor_name",
+			"student_group",
+			"room",
+			"schedule_date",
+			"from_time",
+			"to_time",
+			"program",
+		],
+		order_by="schedule_date, from_time",
+		ignore_permissions=True,
+	)
+	
+	if level:
+		level_programs = frappe.get_all(
+			"Program",
+			filters={"program_name": ["like", f"%{level}%"]},
+			fields=["name"],
+			ignore_permissions=True
+		)
+		level_program_names = [p.name for p in level_programs]
+		schedules = [s for s in schedules if s.program and s.program in level_program_names]
+	
+	return schedules
+
+
+@frappe.whitelist()
+def get_course_schedule_details(schedule_name):
+	return frappe.get_doc("Course Schedule", schedule_name, ignore_permissions=True).as_dict()
+
+
+@frappe.whitelist()
+def update_course_schedule(schedule_name, schedule_date, from_time, to_time):
+	if "Instructor" in frappe.get_roles() and "Education Manager" not in frappe.get_roles():
+		frappe.throw("You do not have permission to update the timetable", frappe.PermissionError)
+	
+	try:
+		doc = frappe.get_doc("Course Schedule", schedule_name)
+		doc.schedule_date = schedule_date
+		doc.from_time = from_time
+		doc.to_time = to_time
+		doc.save()
+		return "success"
+	except Exception as e:
+		frappe.log_error(f"Error updating course schedule: {str(e)}")
+		return "error"
+
+
+@frappe.whitelist()
+def update_course_schedule_details(
+	schedule_name, course, instructor, student_group, room, schedule_date, from_time, to_time
+):
+	if "Instructor" in frappe.get_roles() and "Education Manager" not in frappe.get_roles():
+		frappe.throw("You do not have permission to update the timetable", frappe.PermissionError)
+	
+	try:
+		doc = frappe.get_doc("Course Schedule", schedule_name)
+		doc.course = course
+		doc.instructor = instructor
+		doc.student_group = student_group
+		doc.room = room
+		doc.schedule_date = schedule_date
+		doc.from_time = from_time
+		doc.to_time = to_time
+		doc.save()
+		return "success"
+	except Exception as e:
+		frappe.log_error(f"Error updating course schedule details: {str(e)}")
+		return "error"
+
+
+@frappe.whitelist()
+def create_course_schedule(
+	course, instructor, student_group, room, schedule_date, from_time, to_time
+):
+	if "Instructor" in frappe.get_roles() and "Education Manager" not in frappe.get_roles():
+		frappe.throw("You do not have permission to create course schedules", frappe.PermissionError)
+	
+	try:
+		program = frappe.db.get_value("Student Group", student_group, "program")
+		
+		doc = frappe.new_doc("Course Schedule")
+		doc.course = course
+		doc.instructor = instructor
+		doc.student_group = student_group
+		doc.room = room
+		doc.schedule_date = schedule_date
+		doc.from_time = from_time
+		doc.to_time = to_time
+		if program:
+			doc.program = program
+		doc.insert()
+		return doc.name
+	except Exception as e:
+		frappe.log_error(f"Error creating course schedule: {str(e)}")
+		return "error"
+
+
+@frappe.whitelist()
+def get_student_grades(student=None, program=None, **kwargs):
+	if not student:
+		return []
+	
+	grades = frappe.db.get_list(
+		"Assessment Result",
+		fields=[
+			"name",
+			"student_group",
+			"course",
+			"assessment_group",
+			"total_score",
+			"maximum_score",
+			"grade",
+		],
+		filters={"student": student, "program": program},
+		ignore_permissions=True,
+	)
+	return grades

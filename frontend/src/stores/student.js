@@ -11,11 +11,12 @@ export const studentStore = defineStore('education-student', () => {
 
   const student = createResource({
     url: 'education.education.api.get_student_info',
+    auto: true,
     onSuccess(info) {
       if (!info) {
         window.location.href = '/app'
       }
-      currentProgram.value = info.current_program
+      currentProgram.value = info?.current_program || {}
       // remove current_program from info
       delete info.current_program
       studentGroups.value = info.student_groups || []
@@ -30,7 +31,7 @@ export const studentStore = defineStore('education-student', () => {
   // Fetch fees data
   const fees = createResource({
     url: 'education.education.api.get_student_invoices',
-    params: () => ({ student: studentInfo.value?.name }),
+    params: () => ({ student: studentInfo.value?.name || null }),
     onSuccess(data) {
       feesData.value = data
     },

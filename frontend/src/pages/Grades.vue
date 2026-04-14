@@ -41,19 +41,25 @@ import {
   FeatherIcon,
   ListView,
   createResource,
-  createListResource,
 } from 'frappe-ui'
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { studentStore } from '@/stores/student'
 import { groupBy } from '@/utils'
 
 import MissingData from '@/components/MissingData.vue'
 
-const { getCurrentProgram, getStudentInfo } = studentStore()
+const { getCurrentProgram, getStudentInfo, student } = studentStore()
 
 // Use computed to get reactive values from store
 const studentInfo = computed(() => getStudentInfo().value)
 const currentProgram = computed(() => getCurrentProgram().value)
+
+// Fetch student info first, then load data
+onMounted(async () => {
+  await student.fetch()
+  student_programs.fetch()
+  grades.fetch()
+})
 
 const allPrograms = ref([])
 const selectedProgram = ref('')
@@ -90,27 +96,17 @@ const student_programs = createResource({
       allPrograms.value = programs
     }
   },
-  auto: true,
+  auto: false,
 })
 
-const grades = createListResource({
-  doctype: 'Assessment Result',
-  fields: [
-    'name',
-    'student_group',
-    'course',
-    'assessment_group',
-    'total_score',
-    'maximum_score',
-    'grade',
-  ],
-  filters: () => ({
+const grades = createResource({
+  url: 'education.education.api.get_student_grades',
+  params: () => ({
     student: studentInfo.value?.name,
     program: currentProgram.value?.program,
   }),
-  transform: () => {},
-
   onSuccess: (response) => {
+    tableData.value.rows = []
     let conductedExams = groupBy(response, (row) => row.assessment_group)
     let exams = Object.keys(conductedExams)
     updateColumns(exams)
@@ -128,7 +124,7 @@ const grades = createListResource({
       tableData.value.rows.push(row)
     })
   },
-  auto: true,
+  auto: false,
 })
 
 const updateColumns = (exams) => {

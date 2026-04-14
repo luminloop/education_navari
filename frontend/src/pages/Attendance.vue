@@ -62,7 +62,7 @@ import NewLeave from '@/components/NewLeave.vue'
 import Calendar from '@/components/Calendar.vue'
 import { createToast } from '@/utils'
 
-const { getCurrentProgram, getStudentInfo, getStudentGroups } = studentStore()
+const { getCurrentProgram, getStudentInfo, getStudentGroups, student } = studentStore()
 
 // Use computed for reactive values
 const studentInfo = computed(() => getStudentInfo().value)
@@ -72,7 +72,9 @@ const studentGroups = computed(() => getStudentGroups().value || [])
 // storeToRefs converts isAttendancePage to a ref, hence achieving reactivity
 const { isAttendancePage } = storeToRefs(leaveStore())
 
-onMounted(() => {
+onMounted(async () => {
+  // Fetch student info first, then set student group
+  await student.fetch()
   setStudentGroup()
 })
 
