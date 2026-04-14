@@ -120,10 +120,12 @@ const attendanceStatus = {
 
 const attendanceResource = createResource({
   url: 'education.education.api.get_student_attendance',
-  params: () => ({
-    student_group: selectedGroup.value,
-    student: studentInfo.value?.name,
-  }),
+  makeParams() {
+    return {
+      student_group: selectedGroup.value,
+      student: studentInfo.value?.name,
+    }
+  },
   transform: (attendance) => {
     // filter attendance to remove duplicate attendance data
     attendance = attendance.filter(

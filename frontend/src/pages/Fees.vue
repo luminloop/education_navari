@@ -88,14 +88,20 @@ const studentInfo = computed(() => getStudentInfo().value)
 // Fetch student info first, then fees
 onMounted(async () => {
   await student.fetch()
-  feesResource.fetch()
+  if (studentInfo.value?.name) {
+    feesResource.fetch()
+  } else {
+    console.error('Cannot fetch fees: Student name is missing')
+  }
 })
 
 const feesResource = createResource({
   url: 'education.education.api.get_student_invoices',
-  params: () => ({
-    student: studentInfo.value?.name,
-  }),
+  makeParams() {
+    return {
+      student: studentInfo.value?.name,
+    }
+  },
   onSuccess: (response) => {
     printFormat = response?.print_format
     let invoices = response?.invoices

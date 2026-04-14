@@ -57,8 +57,12 @@ const currentProgram = computed(() => getCurrentProgram().value)
 // Fetch student info first, then load data
 onMounted(async () => {
   await student.fetch()
-  student_programs.fetch()
-  grades.fetch()
+  if (studentInfo.value?.name) {
+    student_programs.fetch()
+    grades.fetch()
+  } else {
+    console.error('Cannot fetch grades: Student info is missing')
+  }
 })
 
 const allPrograms = ref([])
@@ -80,9 +84,11 @@ const tableData = ref({
 
 const student_programs = createResource({
   url: 'education.education.api.get_student_programs',
-  params: () => ({
-    student: studentInfo.value?.name,
-  }),
+  makeParams() {
+    return {
+      student: studentInfo.value?.name,
+    }
+  },
   onSuccess: (response) => {
     let programs = []
     response.forEach((program) => {
@@ -101,10 +107,12 @@ const student_programs = createResource({
 
 const grades = createResource({
   url: 'education.education.api.get_student_grades',
-  params: () => ({
-    student: studentInfo.value?.name,
-    program: currentProgram.value?.program,
-  }),
+  makeParams() {
+    return {
+      student: studentInfo.value?.name,
+      program: currentProgram.value?.program,
+    }
+  },
   onSuccess: (response) => {
     tableData.value.rows = []
     let conductedExams = groupBy(response, (row) => row.assessment_group)

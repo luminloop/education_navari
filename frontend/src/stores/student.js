@@ -31,7 +31,9 @@ export const studentStore = defineStore('education-student', () => {
   // Fetch fees data
   const fees = createResource({
     url: 'education.education.api.get_student_invoices',
-    params: () => ({ student: studentInfo.value?.name || null }),
+    makeParams() {
+      return { student: studentInfo.value?.name || null }
+    },
     onSuccess(data) {
       feesData.value = data
     },
@@ -41,10 +43,12 @@ export const studentStore = defineStore('education-student', () => {
   // Fetch attendance data
   const attendance = createResource({
     url: 'education.education.api.get_student_attendance',
-    params: () => ({ 
-      student: studentInfo.value?.name,
-      program: currentProgram.value?.program
-    }),
+    makeParams() {
+      return {
+        student: studentInfo.value?.name,
+        program: currentProgram.value?.program,
+      }
+    },
     onSuccess(data) {
       attendanceData.value = data
     },

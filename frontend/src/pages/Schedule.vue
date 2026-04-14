@@ -22,14 +22,20 @@ import { createResource } from 'frappe-ui'
 import { ref, computed, onMounted } from 'vue'
 import { studentStore } from '@/stores/student'
 
-const { getCurrentProgram, getStudentGroups, student } = studentStore()
+const { getCurrentProgram, getStudentInfo, getStudentGroups, student } = studentStore()
+
+const studentInfo = computed(() => getStudentInfo().value)
 
 const events = ref([])
 
 // Fetch student info first, then schedule
 onMounted(async () => {
   await student.fetch()
-  scheduleResource.fetch()
+  if (studentInfo.value?.name) {
+    scheduleResource.fetch()
+  } else {
+    console.error('Cannot fetch schedule: Student info is missing')
+  }
 })
 
 // Use computed to get reactive values from store
@@ -45,10 +51,12 @@ const studentGroupList = computed(() => {
 // Create resource with computed values
 const scheduleResource = createResource({
   url: 'education.education.api.get_course_schedule_for_student',
-  params: () => ({
-    program_name: programName.value,
-    student_groups: studentGroupList.value,
-  }),
+  makeParams() {
+    return {
+      program_name: programName.value,
+      student_groups: studentGroupList.value,
+    }
+  },
   onSuccess: (response) => {
     let schedule = []
     response.forEach((classSchedule) => {
