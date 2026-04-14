@@ -5,7 +5,7 @@ import requests
 from erpnext.accounts.doctype.journal_entry.journal_entry import (
     get_payment_entry_against_invoice,
 )
-from erpnext.accounts.doctype.payment_entry.test_payment_entry import get_payment_entry
+from erpnext.accounts.doctype.payment_entry.payment_entry import get_payment_entry
 from frappe import _
 from frappe.utils import cint, nowdate, validate_phone_number
 
