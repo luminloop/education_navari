@@ -922,7 +922,7 @@ def create_course_schedule(
 def get_student_grades(student=None, program=None, **kwargs):
 	if not student:
 		return []
-	
+
 	grades = frappe.db.get_list(
 		"Assessment Result",
 		fields=[
@@ -938,3 +938,279 @@ def get_student_grades(student=None, program=None, **kwargs):
 		ignore_permissions=True,
 	)
 	return grades
+
+
+@frappe.whitelist()
+def get_student_dashboard(student=None, program=None, student_groups=None, **kwargs):
+	"""Aggregated dashboard data for the student portal cards.
+
+	Returns next class, today's schedule, latest grade, attendance rate,
+	and outstanding fees in a single call so the dashboard renders without
+	stitching multiple resources together.
+	"""
+	from datetime import datetime, timedelta
+
+	result = {
+		"next_class": None,
+		"today_schedule": [],
+		"latest_grade": None,
+		"attendance_rate": None,
+		"attendance_total": 0,
+		"outstanding_fees": 0,
+		"outstanding_count": 0,
+		"currency": "",
+	}
+
+	if not student:
+		return result
+
+	# ---- Today's schedule + next class ----
+	group_names = []
+	if student_groups:
+		if isinstance(student_groups, str):
+			try:
+				student_groups = json.loads(student_groups)
+			except Exception:
+				student_groups = []
+		if isinstance(student_groups, list) and student_groups:
+			if isinstance(student_groups[0], str):
+				group_names = student_groups
+			else:
+				group_names = [sg.get("label") for sg in student_groups if sg.get("label")]
+
+	today_str = today()
+	schedule_filters = {"schedule_date": today_str}
+	if program:
+		schedule_filters["program"] = program
+	if group_names:
+		schedule_filters["student_group"] = ["in", group_names]
+
+	today_schedule = frappe.db.get_list(
+		"Course Schedule",
+		fields=["name", "title", "course", "from_time", "to_time", "room", "instructor", "class_schedule_color"],
+		filters=schedule_filters,
+		order_by="from_time asc",
+		ignore_permissions=True,
+	)
+
+	now = datetime.now()
+	for item in today_schedule:
+		from_time = str(item.get("from_time") or "").split(".")[0]
+		to_time = str(item.get("to_time") or "").split(".")[0]
+		item["from_time"] = from_time
+		item["to_time"] = to_time
+		item["display_time"] = from_time[:5] if from_time else ""
+
+	result["today_schedule"] = today_schedule
+
+	for item in today_schedule:
+		if not item.get("from_time"):
+			continue
+		try:
+			start = datetime.strptime(f"{today_str} {item['from_time']}", "%Y-%m-%d %H:%M:%S")
+		except ValueError:
+			continue
+		if start >= now:
+			result["next_class"] = {
+				"course": item.get("title") or item.get("course"),
+				"time": item["display_time"],
+				"room": item.get("room"),
+			}
+			break
+
+	# ---- Latest grade ----
+	if program:
+		latest = frappe.db.get_list(
+			"Assessment Result",
+			fields=["course", "grade", "total_score", "maximum_score", "assessment_group", "modified"],
+			filters={"student": student, "program": program},
+			order_by="modified desc",
+			limit=1,
+			ignore_permissions=True,
+		)
+		if latest:
+			row = latest[0]
+			result["latest_grade"] = {
+				"course": row.get("course"),
+				"grade": row.get("grade"),
+				"score": row.get("total_score"),
+				"max_score": row.get("maximum_score"),
+				"assessment": row.get("assessment_group"),
+			}
+
+	# ---- Attendance rate (last 60 days) ----
+	cutoff = (datetime.now() - timedelta(days=60)).date()
+	attendance_rows = frappe.db.get_list(
+		"Student Attendance",
+		fields=["status"],
+		filters={"student": student, "docstatus": 1, "date": [">=", cutoff]},
+		ignore_permissions=True,
+		limit_page_length=0,
+	)
+	if attendance_rows:
+		present = sum(1 for r in attendance_rows if r.get("status") == "Present")
+		total = len(attendance_rows)
+		result["attendance_total"] = total
+		result["attendance_rate"] = round((present / total) * 100) if total else None
+
+	# ---- Outstanding fees ----
+	# Match the Fees page behaviour: include Draft invoices (docstatus 0) too,
+	# because fee invoices are often left unsubmitted.
+	try:
+		invoice_rows = frappe.db.sql(
+			"""
+			SELECT outstanding_amount, grand_total, currency, status
+			FROM `tabSales Invoice`
+			WHERE student = %s AND docstatus IN (0, 1)
+			  AND status IN ('Unpaid', 'Overdue', 'Partly Paid', 'Draft')
+			""",
+			(student,),
+			as_dict=True,
+		)
+		if invoice_rows:
+			result["outstanding_count"] = len(invoice_rows)
+			# Draft invoices have outstanding_amount = 0; fall back to grand_total.
+			result["outstanding_fees"] = sum(
+				flt(r.outstanding_amount) or flt(r.grand_total) for r in invoice_rows
+			)
+			currency = invoice_rows[0].get("currency") or ""
+			result["currency"] = get_currency_symbol(currency) if currency else ""
+	except Exception:
+		frappe.log_error(frappe.get_traceback(), "Student Dashboard Fees Error")
+
+	return result
+
+
+@frappe.whitelist()
+def get_student_notifications(student=None, program=None, limit=10, **kwargs):
+	"""Build a notification feed for the student portal from real records."""
+	from datetime import datetime, timedelta
+
+	notifications = []
+	if not student:
+		return notifications
+
+	# Unpaid / overdue invoices (include Draft to mirror the Fees page)
+	try:
+		invoices = frappe.db.sql(
+			"""
+			SELECT name, outstanding_amount, grand_total, due_date, status, currency
+			FROM `tabSales Invoice`
+			WHERE student = %s AND docstatus IN (0, 1)
+			  AND status IN ('Unpaid', 'Overdue', 'Partly Paid', 'Draft')
+			ORDER BY due_date ASC
+			LIMIT 5
+			""",
+			(student,),
+			as_dict=True,
+		)
+		for inv in invoices:
+			symbol = get_currency_symbol(inv.currency) if inv.currency else ""
+			is_overdue = inv.status == "Overdue"
+			amount = flt(inv.outstanding_amount) or flt(inv.grand_total)
+			notifications.append({
+				"id": f"fee-{inv.name}",
+				"type": "fee",
+				"severity": "high" if is_overdue else "medium",
+				"icon": "credit-card",
+				"title": "Fee payment due" if not is_overdue else "Fee payment overdue",
+				"message": f"{symbol} {amount:,.0f} due {frappe.utils.format_date(inv.due_date) if inv.due_date else ''}".strip(),
+				"timestamp": inv.due_date.isoformat() if inv.due_date else None,
+				"route": "/fees",
+			})
+	except Exception:
+		frappe.log_error(frappe.get_traceback(), "Student Notifications Fees")
+
+	# Recent grades (last 30 days)
+	cutoff = datetime.now() - timedelta(days=30)
+	grade_filters = {"student": student, "modified": [">=", cutoff]}
+	if program:
+		grade_filters["program"] = program
+	try:
+		recent_grades = frappe.db.get_list(
+			"Assessment Result",
+			fields=["name", "course", "grade", "total_score", "maximum_score", "assessment_group", "modified"],
+			filters=grade_filters,
+			order_by="modified desc",
+			limit=5,
+			ignore_permissions=True,
+		)
+		for row in recent_grades:
+			score_text = ""
+			if row.get("total_score") is not None and row.get("maximum_score"):
+				score_text = f"{row.total_score}/{row.maximum_score}"
+			elif row.get("grade"):
+				score_text = row.grade
+			notifications.append({
+				"id": f"grade-{row.name}",
+				"type": "grade",
+				"severity": "low",
+				"icon": "award",
+				"title": f"New grade in {row.course}",
+				"message": f"{row.assessment_group}: {score_text}".strip(": "),
+				"timestamp": row.modified.isoformat() if row.modified else None,
+				"route": "/grades",
+			})
+	except Exception:
+		frappe.log_error(frappe.get_traceback(), "Student Notifications Grades")
+
+	# Low attendance (last 60 days)
+	try:
+		attendance_cutoff = (datetime.now() - timedelta(days=60)).date()
+		rows = frappe.db.get_list(
+			"Student Attendance",
+			fields=["status"],
+			filters={"student": student, "docstatus": 1, "date": [">=", attendance_cutoff]},
+			ignore_permissions=True,
+			limit_page_length=0,
+		)
+		if rows:
+			present = sum(1 for r in rows if r.get("status") == "Present")
+			rate = round((present / len(rows)) * 100)
+			if rate < 80:
+				notifications.append({
+					"id": "attendance-low",
+					"type": "attendance",
+					"severity": "high",
+					"icon": "alert-triangle",
+					"title": "Attendance below 80%",
+					"message": f"Your attendance is {rate}% over the last 60 days.",
+					"timestamp": datetime.now().isoformat(),
+					"route": "/attendance",
+				})
+	except Exception:
+		frappe.log_error(frappe.get_traceback(), "Student Notifications Attendance")
+
+	# Recent leave applications
+	try:
+		leaves = frappe.db.get_list(
+			"Student Leave Application",
+			fields=["name", "from_date", "to_date", "mark_as_present", "modified"],
+			filters={"student": student, "modified": [">=", cutoff]},
+			order_by="modified desc",
+			limit=3,
+			ignore_permissions=True,
+		)
+		for lv in leaves:
+			notifications.append({
+				"id": f"leave-{lv.name}",
+				"type": "leave",
+				"severity": "low",
+				"icon": "calendar",
+				"title": "Leave application updated",
+				"message": f"{frappe.utils.format_date(lv.from_date)} → {frappe.utils.format_date(lv.to_date)}",
+				"timestamp": lv.modified.isoformat() if lv.modified else None,
+				"route": "/attendance",
+			})
+	except Exception:
+		# Doctype may not exist in all installs
+		pass
+
+	severity_rank = {"high": 0, "medium": 1, "low": 2}
+	from itertools import groupby
+	notifications.sort(key=lambda n: (severity_rank.get(n.get("severity"), 3), n.get("timestamp") or ""))
+	ordered = []
+	for _sev, group in groupby(notifications, key=lambda n: severity_rank.get(n.get("severity"), 3)):
+		ordered.extend(sorted(group, key=lambda n: n.get("timestamp") or "", reverse=True))
+
+	return ordered[: int(limit)]

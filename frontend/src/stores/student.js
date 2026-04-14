@@ -8,6 +8,8 @@ export const studentStore = defineStore('education-student', () => {
   const studentGroups = ref([])
   const feesData = ref({})
   const attendanceData = ref({})
+  const dashboardData = ref(null)
+  const notifications = ref([])
 
   const student = createResource({
     url: 'education.education.api.get_student_info',
@@ -109,6 +111,50 @@ export const studentStore = defineStore('education-student', () => {
     }
   }
 
+  // Aggregated dashboard data (next class, today's schedule, latest grade, attendance, fees)
+  const dashboard = createResource({
+    url: 'education.education.api.get_student_dashboard',
+    makeParams() {
+      return {
+        student: studentInfo.value?.name,
+        program: currentProgram.value?.program,
+        student_groups: studentGroups.value,
+      }
+    },
+    onSuccess(data) {
+      dashboardData.value = data
+    },
+    auto: false,
+  })
+
+  function fetchDashboard() {
+    if (studentInfo.value?.name) {
+      dashboard.fetch()
+    }
+  }
+
+  // Notifications feed
+  const notificationsResource = createResource({
+    url: 'education.education.api.get_student_notifications',
+    makeParams() {
+      return {
+        student: studentInfo.value?.name,
+        program: currentProgram.value?.program,
+        limit: 15,
+      }
+    },
+    onSuccess(data) {
+      notifications.value = data || []
+    },
+    auto: false,
+  })
+
+  function fetchNotifications() {
+    if (studentInfo.value?.name) {
+      notificationsResource.fetch()
+    }
+  }
+
   return {
     student,
     studentInfo,
@@ -128,5 +174,11 @@ export const studentStore = defineStore('education-student', () => {
     totalOutstandingFees,
     fetchFees,
     fetchAttendance,
+    dashboard,
+    dashboardData,
+    fetchDashboard,
+    notificationsResource,
+    notifications,
+    fetchNotifications,
   }
 })

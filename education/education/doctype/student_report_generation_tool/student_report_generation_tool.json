@@ -4,29 +4,38 @@
  "doctype": "DocType",
  "editable_grid": 1,
  "engine": "InnoDB",
-"field_order": [
-   "student",
-   "student_name",
-   "program",
-   "student_batch",
-   "column_break_3",
-   "assessment_group",
-   "academic_year",
-   "academic_term",
-   "section_break_5",
-   "add_letterhead",
-   "letter_head",
-   "parents_meeting",
-   "parents_attendance",
-   "column_break_15",
-   "show_marks",
-   "terms",
-   "assessment_terms",
-   "section_break_signature",
-   "include_principal_signature",
-   "include_teacher_comments"
-  ],
+ "field_order": [
+  "student_section",
+  "student",
+  "student_name",
+  "program",
+  "student_batch",
+  "column_break_3",
+  "academic_year",
+  "academic_term",
+  "assessment_group",
+  "section_break_5",
+  "add_letterhead",
+  "letter_head",
+  "show_marks",
+  "include_teacher_comments",
+  "column_break_15",
+  "include_principal_signature",
+  "principal_signature_pad",
+  "principal_signature_data",
+  "section_break_meta",
+  "parents_meeting",
+  "parents_attendance",
+  "column_break_meta",
+  "terms",
+  "assessment_terms"
+ ],
  "fields": [
+  {
+   "fieldname": "student_section",
+   "fieldtype": "Section Break",
+   "label": "Student"
+  },
   {
    "fieldname": "student",
    "fieldtype": "Link",
@@ -55,27 +64,8 @@
    "options": "Student Batch Name"
   },
   {
-   "default": "0",
-   "fieldname": "show_marks",
-   "fieldtype": "Check",
-   "label": "Show Marks"
-  },
-  {
-   "default": "1",
-   "fieldname": "add_letterhead",
-   "fieldtype": "Check",
-   "label": "Add letterhead"
-  },
-  {
    "fieldname": "column_break_3",
    "fieldtype": "Column Break"
-  },
-  {
-   "fieldname": "assessment_group",
-   "fieldtype": "Link",
-   "label": "Assessment Group",
-   "options": "Assessment Group",
-   "reqd": 1
   },
   {
    "fieldname": "academic_year",
@@ -92,6 +82,24 @@
    "options": "Academic Term"
   },
   {
+   "fieldname": "assessment_group",
+   "fieldtype": "Link",
+   "label": "Assessment Group",
+   "options": "Assessment Group",
+   "reqd": 1
+  },
+  {
+   "fieldname": "section_break_5",
+   "fieldtype": "Section Break",
+   "label": "Output Options"
+  },
+  {
+   "default": "1",
+   "fieldname": "add_letterhead",
+   "fieldtype": "Check",
+   "label": "Add Letterhead"
+  },
+  {
    "depends_on": "add_letterhead",
    "fieldname": "letter_head",
    "fieldtype": "Link",
@@ -99,14 +107,49 @@
    "options": "Letter Head"
   },
   {
-   "fieldname": "section_break_5",
+   "default": "0",
+   "fieldname": "show_marks",
+   "fieldtype": "Check",
+   "label": "Show Marks"
+  },
+  {
+   "default": "1",
+   "fieldname": "include_teacher_comments",
+   "fieldtype": "Check",
+   "label": "Include Teacher Comments"
+  },
+  {
+   "fieldname": "column_break_15",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "0",
+   "fieldname": "include_principal_signature",
+   "fieldtype": "Check",
+   "label": "Include Principal Signature"
+  },
+  {
+   "depends_on": "eval:doc.include_principal_signature",
+   "fieldname": "principal_signature_pad",
+   "fieldtype": "HTML",
+   "label": "Principal Signature"
+  },
+  {
+   "fieldname": "principal_signature_data",
+   "fieldtype": "Long Text",
+   "hidden": 1,
+   "label": "Principal Signature Data"
+  },
+  {
+   "collapsible": 1,
+   "fieldname": "section_break_meta",
    "fieldtype": "Section Break",
-   "label": "Report Settings"
+   "label": "Additional Details"
   },
   {
    "fieldname": "parents_meeting",
    "fieldtype": "Data",
-   "label": "Total Parents Teacher Meeting"
+   "label": "Total Parents Teacher Meetings"
   },
   {
    "fieldname": "parents_attendance",
@@ -114,44 +157,27 @@
    "label": "No. of Meetings Attended by Parents"
   },
   {
+   "fieldname": "column_break_meta",
+   "fieldtype": "Column Break"
+  },
+  {
    "fieldname": "terms",
    "fieldtype": "Link",
    "label": "Terms",
    "options": "Terms and Conditions"
   },
-{
-    "fetch_from": "terms.terms",
-    "fieldname": "assessment_terms",
-    "fieldtype": "Small Text",
-    "label": "Assessment Terms",
-    "read_only": 1
-   },
-   {
-    "fieldname": "section_break_signature",
-    "fieldtype": "Section Break",
-    "label": "Signatures & Comments"
-   },
-   {
-    "default": "0",
-    "fieldname": "include_principal_signature",
-    "fieldtype": "Check",
-    "label": "Include Principal Signature"
-   },
-{
-     "default": "1",
-     "fieldname": "include_teacher_comments",
-     "fieldtype": "Check",
-     "label": "Include Teacher Comments"
-    },
-    {
-     "fieldname": "column_break_15",
-     "fieldtype": "Column Break"
-    }
-   ],
+  {
+   "fetch_from": "terms.terms",
+   "fieldname": "assessment_terms",
+   "fieldtype": "Small Text",
+   "label": "Assessment Terms",
+   "read_only": 1
+  }
+ ],
  "hide_toolbar": 1,
  "issingle": 1,
  "links": [],
- "modified": "2022-12-07 17:53:40.391739",
+ "modified": "2026-04-14 14:00:00.000000",
  "modified_by": "Administrator",
  "module": "Education",
  "name": "Student Report Generation Tool",

@@ -1007,7 +1007,7 @@ def create_course_schedule(
 def get_student_grades(student=None, program=None, **kwargs):
 	if not student:
 		return []
-	
+
 	grades = frappe.db.get_list(
 		"Assessment Result",
 		fields=[
@@ -1023,3 +1023,5 @@ def get_student_grades(student=None, program=None, **kwargs):
 		ignore_permissions=True,
 	)
 	return grades
+
+
