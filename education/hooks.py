@@ -136,9 +136,10 @@ doctype_js = {"Supplier": "public/js/supplier.js"}
 # home_page = "login"
 
 # website user home page (by Role)
-# role_home_page = {
-# 	"Role": "home_page"
-# }
+role_home_page = {
+	"Student": "/student-portal",
+	"Guardian": "/student-portal",
+}
 
 # Generators
 # ----------
