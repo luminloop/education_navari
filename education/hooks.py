@@ -161,6 +161,9 @@ doctype_js = {"Supplier": "public/js/supplier.js"}
 # before_install = "education.install.before_install"
 after_install = "education.install.after_install"
 
+# Build the Vue student portal on every deploy
+before_migrate = "education.build.build_frontend"
+
 # Uninstallation
 # ------------
 
